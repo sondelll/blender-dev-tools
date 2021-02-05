@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
 #  This program is free software; you can redistribute it and/or
@@ -66,7 +68,9 @@ def hash_of_file_and_len(fp):
     import hashlib
     with open(fp, 'rb') as fh:
         data = fh.read()
-        return hashlib.sha512().digest(), len(data)
+        m = hashlib.sha512()
+        m.update(data)
+        return m.digest(), len(data)
 
 
 import re
