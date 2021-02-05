@@ -337,13 +337,9 @@ def extract_c_comments(filepath):
         j = text.rfind("\n", 0, i) + 1
         block = (" " * (i - j)) + block
 
-        if not (SINGLE_LINE or ("\n" in block)):
-            ok = False
-
-        if ok:
-            slineno += text.count("\n", i_prev, i)
-            comments.append(Comment(filepath, block, slineno, 'COMMENT'))
-            i_prev = i
+        slineno += text.count("\n", i_prev, i)
+        comments.append(Comment(filepath, block, slineno, 'COMMENT'))
+        i_prev = i
 
     return comments, code_words
 
