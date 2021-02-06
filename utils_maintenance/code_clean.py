@@ -676,6 +676,15 @@ def run_edits_on_directory(build_dir, regex_list, edit_to_apply, skip_test=False
         return build_args[i + 1]
 
     def test_path(c):
+        # Skip any generated source files (files in the build directory).
+        if os.path.abspath(c).startswith(build_dir):
+            return False
+        # Raise an exception since this should never happen,
+        # we want to know about it early if it does, as it will cause failure
+        # when attenpting to compile the missing file.
+        if not os.path.exists(c):
+            raise Exception("Missing source file: " + c)
+
         for source_path in source_paths:
             index = c.rfind(source_path)
             # print(c)
