@@ -188,7 +188,7 @@ class edit_generators:
 
     class sizeof_fixed_array(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             for match in re.finditer(r"sizeof\(([a-zA-Z_]+)\) \* (\d+) \* (\d+)", data):
@@ -215,7 +215,7 @@ class edit_generators:
 
     class use_const(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
@@ -245,7 +245,7 @@ class edit_generators:
 
     class use_zero_before_float_suffix(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
@@ -276,7 +276,7 @@ class edit_generators:
 
     class use_elem_macro(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
@@ -345,7 +345,7 @@ class edit_generators:
 
     class use_str_elem_macro(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
@@ -422,7 +422,7 @@ class edit_generators:
 
     class use_const_vars(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
@@ -449,7 +449,7 @@ class edit_generators:
 
     class remove_return_parens(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Remove `return (NULL);`
@@ -463,7 +463,7 @@ class edit_generators:
 
     class use_streq_macro(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
@@ -504,7 +504,7 @@ class edit_generators:
 
     class use_array_size_macro(EditGenerator):
         @staticmethod
-        def edit_list_from_file(_source, data, _setup_data):
+        def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
             # Replace:
