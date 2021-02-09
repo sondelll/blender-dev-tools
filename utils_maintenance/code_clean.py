@@ -175,6 +175,26 @@ def find_build_args_make(build_dir):
 #
 # Although this seems like it's not a common use-case.
 
+from collections import namedtuple
+Edit = namedtuple(
+    "Edit", (
+        # Keep first, for sorting.
+        "span",
+
+        "content",
+        "content_fail",
+
+        # Optional.
+        "extra_build_args",
+    ),
+
+    defaults=(
+        # `extra_build_args`.
+        None,
+    )
+)
+del namedtuple
+
 
 class EditGenerator:
     __slots__ = ()
@@ -208,24 +228,24 @@ class edit_generators:
             edits = []
 
             for match in re.finditer(r"sizeof\(([a-zA-Z_]+)\) \* (\d+) \* (\d+)", data):
-                edits.append((
-                    match.span(),
-                    'sizeof(%s[%s][%s])' % (match.group(1), match.group(2), match.group(3)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='sizeof(%s[%s][%s])' % (match.group(1), match.group(2), match.group(3)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             for match in re.finditer(r"sizeof\(([a-zA-Z_]+)\) \* (\d+)", data):
-                edits.append((
-                    match.span(),
-                    'sizeof(%s[%s])' % (match.group(1), match.group(2)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='sizeof(%s[%s])' % (match.group(1), match.group(2)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             for match in re.finditer(r"\b(\d+) \* sizeof\(([a-zA-Z_]+)\)", data):
-                edits.append((
-                    match.span(),
-                    'sizeof(%s[%s])' % (match.group(2), match.group(1)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='sizeof(%s[%s])' % (match.group(2), match.group(1)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
             return edits
 
@@ -249,18 +269,18 @@ class edit_generators:
 
             # `float abc[3] = {0, 1, 2};` -> `const float abc[3] = {0, 1, 2};`
             for match in re.finditer(r"(\(|, |  )([a-zA-Z_0-9]+ [a-zA-Z_0-9]+\[)\b([^\n]+ = )", data):
-                edits.append((
-                    match.span(),
-                    '%s const %s%s' % (match.group(1), match.group(2), match.group(3)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='%s const %s%s' % (match.group(1), match.group(2), match.group(3)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             # `float abc[3]` -> `const float abc[3]`
             for match in re.finditer(r"(\(|, )([a-zA-Z_0-9]+ [a-zA-Z_0-9]+\[)", data):
-                edits.append((
-                    match.span(),
-                    '%s const %s' % (match.group(1), match.group(2)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='%s const %s' % (match.group(1), match.group(2)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
@@ -285,18 +305,18 @@ class edit_generators:
 
             # `1.f` -> `1.0f`
             for match in re.finditer(r"\b(\d+)\.([fF])\b", data):
-                edits.append((
-                    match.span(),
-                    '%s.0%s' % (match.group(1), match.group(2)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='%s.0%s' % (match.group(1), match.group(2)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             # `1.0F` -> `1.0f`
             for match in re.finditer(r"\b(\d+\.\d+)F\b", data):
-                edits.append((
-                    match.span(),
-                    '%sf' % (match.group(1),),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='%sf' % (match.group(1),),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
@@ -356,15 +376,15 @@ class edit_generators:
                             var_rest.append(b)
 
                         if found:
-                            edits.append((
-                                match.span(),
-                                '(%sELEM(%s, %s))' % (
+                            edits.append(Edit(
+                                span=match.span(),
+                                content='(%sELEM(%s, %s))' % (
                                     ('' if is_equal else '!'),
                                     var,
                                     ', '.join(var_rest),
                                 ),
                                 # Use same expression otherwise this can change values inside assert when it shouldn't.
-                                '(%s__ALWAYS_FAIL__(%s, %s))' % (
+                                content_fail='(%s__ALWAYS_FAIL__(%s, %s))' % (
                                     ('' if is_equal else '!'),
                                     var,
                                     ', '.join(var_rest),
@@ -436,15 +456,15 @@ class edit_generators:
                             var_rest.append(b)
 
                         if found:
-                            edits.append((
-                                match.span(),
-                                '(%sSTR_ELEM(%s, %s))' % (
+                            edits.append(Edit(
+                                span=match.span(),
+                                content='(%sSTR_ELEM(%s, %s))' % (
                                     ('' if is_equal else '!'),
                                     var,
                                     ', '.join(var_rest),
                                 ),
                                 # Use same expression otherwise this can change values inside assert when it shouldn't.
-                                '(%s__ALWAYS_FAIL__(%s, %s))' % (
+                                content_fail='(%s__ALWAYS_FAIL__(%s, %s))' % (
                                     ('' if is_equal else '!'),
                                     var,
                                     ', '.join(var_rest),
@@ -468,17 +488,17 @@ class edit_generators:
             edits = []
 
             # for match in re.finditer(r"(  [a-zA-Z0-9_]+ [a-zA-Z0-9_]+ = [A-Z][A-Z_0-9_]*;)", data):
-            #     edits.append((
-            #         match.span(),
-            #         'const %s' % (match.group(1).lstrip()),
-            #         '__ALWAYS_FAIL__',
+            #     edits.append(Edit(
+            #         span=match.span(),
+            #         content='const %s' % (match.group(1).lstrip()),
+            #         content_fail='__ALWAYS_FAIL__',
             #     ))
 
             for match in re.finditer(r"(  [a-zA-Z0-9_]+ [a-zA-Z0-9_]+ = .*;)", data):
-                edits.append((
-                    match.span(),
-                    'const %s' % (match.group(1).lstrip()),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='const %s' % (match.group(1).lstrip()),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
@@ -499,10 +519,10 @@ class edit_generators:
 
             # Remove `return (NULL);`
             for match in re.finditer(r"return \(([a-zA-Z_0-9]+)\);", data):
-                edits.append((
-                    match.span(),
-                    'return %s;' % (match.group(1)),
-                    'return __ALWAYS_FAIL__;',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='return %s;' % (match.group(1)),
+                    content_fail='return __ALWAYS_FAIL__;',
                 ))
             return edits
 
@@ -526,30 +546,30 @@ class edit_generators:
 
             # `strcmp(a, b) == 0` -> `STREQ(a, b)`
             for match in re.finditer(r"\bstrcmp\((.*)\) == 0", data):
-                edits.append((
-                    match.span(),
-                    'STREQ(%s)' % (match.group(1)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='STREQ(%s)' % (match.group(1)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
             for match in re.finditer(r"!strcmp\((.*)\)", data):
-                edits.append((
-                    match.span(),
-                    'STREQ(%s)' % (match.group(1)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='STREQ(%s)' % (match.group(1)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             # `strcmp(a, b) != 0` -> `!STREQ(a, b)`
             for match in re.finditer(r"\bstrcmp\((.*)\) != 0", data):
-                edits.append((
-                    match.span(),
-                    '!STREQ(%s)' % (match.group(1)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='!STREQ(%s)' % (match.group(1)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
             for match in re.finditer(r"\bstrcmp\((.*)\)", data):
-                edits.append((
-                    match.span(),
-                    '!STREQ(%s)' % (match.group(1)),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='!STREQ(%s)' % (match.group(1)),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
@@ -569,10 +589,10 @@ class edit_generators:
             # Note that this replacement is only valid in some cases,
             # so only apply with validation that binary output matches.
             for match in re.finditer(r"\bsizeof\((.*)\) / sizeof\([^\)]+\)", data):
-                edits.append((
-                    match.span(),
-                    'ARRAY_SIZE(%s)' % match.group(1),
-                    '__ALWAYS_FAIL__',
+                edits.append(Edit(
+                    span=match.span(),
+                    content='ARRAY_SIZE(%s)' % match.group(1),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
@@ -660,7 +680,7 @@ def wash_source_with_edits(arg_group):
 
     if skip_test:
         # Just apply all edits.
-        for (start, end), text, text_always_fail in edits:
+        for (start, end), text, _text_always_fail, _extra_build_args in edits:
             data = apply_edit(data, text, start, end, verbose=VERBOSE)
         with open(source, 'w', encoding='utf-8') as fh:
             fh.write(data)
@@ -672,18 +692,25 @@ def wash_source_with_edits(arg_group):
     )
     if not os.path.exists(output):
         raise Exception("Failed to produce output file: " + output)
+
     output_bytes = file_as_bytes(output)
 
-    for (start, end), text, text_always_fail in edits:
+    for (start, end), text, text_always_fail, extra_build_args in edits:
+        build_args_for_edit = build_args
+        if extra_build_args:
+            # Add directly after the compile command.
+            a, b = build_args.split(' ', 1)
+            build_args_for_edit = a + ' ' + extra_build_args + ' ' + b
+
         data_test = apply_edit(data, text, start, end, verbose=VERBOSE)
         if test_edit(
-                source, output, output_bytes, build_args, data, data_test,
+                source, output, output_bytes, build_args_for_edit, data, data_test,
                 keep_edits=False,
         ):
             # This worked, check if the change would fail if replaced with 'text_always_fail'.
             data_test_always_fail = apply_edit(data, text_always_fail, start, end, verbose=False)
             if test_edit(
-                    source, output, output_bytes, build_args, data, data_test_always_fail,
+                    source, output, output_bytes, build_args_for_edit, data, data_test_always_fail,
                     expect_failure=True, keep_edits=False,
             ):
                 if VERBOSE_EDIT_ACTION:
