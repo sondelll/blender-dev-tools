@@ -39,7 +39,7 @@ VERBOSE = False
 # Print the output of the compiler (_very_ noisy, only useful for troubleshooting compiler issues).
 VERBOSE_COMPILER = False
 
-# Print the result of each attemped edit:
+# Print the result of each attempted edit:
 #
 # - Causes code not to compile.
 # - Compiles but changes the resulting behavior.
@@ -515,7 +515,7 @@ class edit_generators:
 
     class remove_return_parens(EditGenerator):
         """
-        Remove redundant parenthisis around return arguments:
+        Remove redundant parenthesis around return arguments:
 
         Replace:
           return (value);
@@ -621,7 +621,7 @@ class edit_generators:
 
         @classmethod
         def setup(cls):
-            # For each file replace pragma once with old-style header guard.
+            # For each file replace `pragma once` with old-style header guard.
             # This is needed so we can remove the header with the knowledge the source file didn't use it indirectly.
             files = []
             shared_edit_data = {
