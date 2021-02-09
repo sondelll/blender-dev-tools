@@ -39,6 +39,14 @@ VERBOSE = False
 # Print the output of the compiler (_very_ noisy, only useful for troubleshooting compiler issues).
 VERBOSE_COMPILER = False
 
+# Print the result of each attemped edit:
+#
+# - Causes code not to compile.
+# - Compiles but changes the resulting behavior.
+# - Succeeds.
+VERBOSE_EDIT_ACTION = False
+
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 SOURCE_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", ".."))
@@ -589,10 +597,12 @@ def test_edit(source, output, output_bytes, build_args, data, data_test, keep_ed
                     fh.write(data)
             return True
         else:
-            print("Changed code, skip...", hex(hash(output_bytes)), hex(hash(output_bytes_test)))
+            if VERBOSE_EDIT_ACTION:
+                print("Changed code, skip...", hex(hash(output_bytes)), hex(hash(output_bytes_test)))
     else:
         if not expect_failure:
-            print("Failed to compile, skip...")
+            if VERBOSE_EDIT_ACTION:
+                print("Failed to compile, skip...")
 
     with open(source, 'w', encoding='utf-8') as fh:
         fh.write(data)
@@ -676,7 +686,8 @@ def wash_source_with_edits(arg_group):
                     source, output, output_bytes, build_args, data, data_test_always_fail,
                     expect_failure=True, keep_edits=False,
             ):
-                print("Edit at", (start, end), "doesn't fail, assumed to be ifdef'd out, continuing")
+                if VERBOSE_EDIT_ACTION:
+                    print("Edit at", (start, end), "doesn't fail, assumed to be ifdef'd out, continuing")
                 continue
 
             # Apply the edit.
