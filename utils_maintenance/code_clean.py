@@ -187,6 +187,14 @@ class edit_generators:
     # fake module.
 
     class sizeof_fixed_array(EditGenerator):
+        """
+        Use fixed size array syntax with `sizeof`:
+
+        Replace:
+          sizeof(float) * 4 * 4
+        With:
+          sizeof(float[4][4])
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
@@ -214,15 +222,24 @@ class edit_generators:
             return edits
 
     class use_const(EditGenerator):
+        """
+        Use const variables:
+
+        Replace:
+          float abc[3] = {0, 1, 2};
+        With:
+          const float abc[3] = {0, 1, 2};
+
+        Replace:
+          float abc[3]
+        With:
+          const float abc[3]
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
-            # Replace:
-            #   float abc[3] = {0, 1, 2};
-            # With:
-            #   const float abc[3] = {0, 1, 2};
-
+            # `float abc[3] = {0, 1, 2};` -> `const float abc[3] = {0, 1, 2};`
             for match in re.finditer(r"(\(|, |  )([a-zA-Z_0-9]+ [a-zA-Z_0-9]+\[)\b([^\n]+ = )", data):
                 edits.append((
                     match.span(),
@@ -230,10 +247,7 @@ class edit_generators:
                     '__ALWAYS_FAIL__',
                 ))
 
-            # Replace:
-            #   float abc[3]
-            # With:
-            #   const float abc[3]
+            # `float abc[3]` -> `const float abc[3]`
             for match in re.finditer(r"(\(|, )([a-zA-Z_0-9]+ [a-zA-Z_0-9]+\[)", data):
                 edits.append((
                     match.span(),
@@ -244,15 +258,24 @@ class edit_generators:
             return edits
 
     class use_zero_before_float_suffix(EditGenerator):
+        """
+        Use zero before the float suffix.
+
+        Replace:
+          1.f
+        With:
+          1.0f
+
+        Replace:
+          1.0F
+        With:
+          1.0f
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
-            # Replace:
-            #   1.f
-            # With:
-            #   1.0f
-
+            # `1.f` -> `1.0f`
             for match in re.finditer(r"\b(\d+)\.([fF])\b", data):
                 edits.append((
                     match.span(),
@@ -260,11 +283,7 @@ class edit_generators:
                     '__ALWAYS_FAIL__',
                 ))
 
-            # Replace:
-            #   1.0F
-            # With:
-            #   1.0f
-
+            # `1.0F` -> `1.0f`
             for match in re.finditer(r"\b(\d+\.\d+)F\b", data):
                 edits.append((
                     match.span(),
@@ -275,16 +294,19 @@ class edit_generators:
             return edits
 
     class use_elem_macro(EditGenerator):
+        """
+        Use the `ELEM` macro for more abbreviated expressions.
+
+        Replace:
+          (a == b || a == c)
+          (a != b && a != c)
+        With:
+          (ELEM(a, b, c))
+          (!ELEM(a, b, c))
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
-
-            # Replace:
-            #   (a == b || a == c)
-            #   (a != b && a != c)
-            # With:
-            #   (ELEM(a, b, c))
-            #   (!ELEM(a, b, c))
 
             test_equal = (
                 r'[\(]*'
@@ -344,14 +366,18 @@ class edit_generators:
             return edits
 
     class use_str_elem_macro(EditGenerator):
+        """
+        Use `STR_ELEM` macro:
+
+        Replace:
+          (STREQ(a, b) || STREQ(a, c))
+        With:
+          (STR_ELEM(a, b, c))
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
-            # Replace:
-            #   (STREQ(a, b) || STREQ(a, c))
-            # With:
-            #   (STR_ELEM(a, b, c))
 
             test_equal = (
                 r'[\(]*'
@@ -421,14 +447,17 @@ class edit_generators:
 
 
     class use_const_vars(EditGenerator):
+        """
+        Use `const` where possible:
+
+        Replace:
+          float abc[3] = {0, 1, 2};
+        With:
+          const float abc[3] = {0, 1, 2};
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
-
-            # Replace:
-            #   float abc[3] = {0, 1, 2};
-            # With:
-            #   const float abc[3] = {0, 1, 2};
 
             # for match in re.finditer(r"(  [a-zA-Z0-9_]+ [a-zA-Z0-9_]+ = [A-Z][A-Z_0-9_]*;)", data):
             #     edits.append((
@@ -448,6 +477,14 @@ class edit_generators:
 
 
     class remove_return_parens(EditGenerator):
+        """
+        Remove redundant parenthisis around return arguments:
+
+        Replace:
+          return (value);
+        With:
+          return value;
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
@@ -462,14 +499,24 @@ class edit_generators:
             return edits
 
     class use_streq_macro(EditGenerator):
+        """
+        Use `STREQ` macro:
+
+        Replace:
+          strcmp(a, b) == 0
+        With:
+          STREQ(a, b)
+
+        Replace:
+          strcmp(a, b) != 0
+        With:
+          !STREQ(a, b)
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
 
-            # Replace:
-            #   strcmp(a, b) == 0
-            # With:
-            #   STREQ(a, b)
+            # `strcmp(a, b) == 0` -> `STREQ(a, b)`
             for match in re.finditer(r"\bstrcmp\((.*)\) == 0", data):
                 edits.append((
                     match.span(),
@@ -483,10 +530,7 @@ class edit_generators:
                     '__ALWAYS_FAIL__',
                 ))
 
-            # Replace:
-            #   strcmp(a, b) != 0
-            # With:
-            #   !STREQ(a, b)
+            # `strcmp(a, b) != 0` -> `!STREQ(a, b)`
             for match in re.finditer(r"\bstrcmp\((.*)\) != 0", data):
                 edits.append((
                     match.span(),
@@ -503,15 +547,17 @@ class edit_generators:
             return edits
 
     class use_array_size_macro(EditGenerator):
+        """
+        Use macro for an error checked array size:
+
+        Replace:
+          sizeof(foo) / sizeof(*foo)
+        With:
+          ARRAY_SIZE(foo)
+        """
         @staticmethod
         def edit_list_from_file(_source, data, _shared_edit_data):
             edits = []
-
-            # Replace:
-            #   sizeof(foo) / sizeof(*foo)
-            # With:
-            #   ARRAY_SIZE(foo)
-            #
             # Note that this replacement is only valid in some cases,
             # so only apply with validation that binary output matches.
             for match in re.finditer(r"\bsizeof\((.*)\) / sizeof\([^\)]+\)", data):
@@ -739,9 +785,22 @@ def run_edits_on_directory(build_dir, regex_list, edit_to_apply, skip_test=False
 
 
 def create_parser():
+    from textwrap import indent, dedent
+    import argparse
+
     edits_all = edit_function_get_all()
 
-    import argparse
+    # Create docstring for edits.
+    edits_all_docs = []
+    for edit in edits_all:
+        edits_all_docs.append(
+            "  %s\n%s" % (
+                edit,
+                indent(dedent(getattr(edit_generators, edit).__doc__ or '').strip('\n') + '\n', '    '),
+            )
+        )
+    edits_all_docs = "\n".join(edits_all_docs)
+
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -761,9 +820,7 @@ def create_parser():
         "--edit",
         dest="edit",
         choices=edits_all,
-        help=(
-            "Specify the edit preset to run."
-        ),
+        help="Specify the edit preset to run.\n\n" + edits_all_docs + "\n",
         required=True,
     )
     parser.add_argument(
