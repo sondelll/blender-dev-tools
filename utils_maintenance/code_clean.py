@@ -69,6 +69,15 @@ def line_from_span(text, start, end):
     return text[start:end]
 
 
+def files_recursive_with_ext(path, ext):
+    for dirpath, dirnames, filenames in os.walk(path):
+        # skip '.git' and other dot-files.
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        for filename in filenames:
+            if filename.endswith(ext):
+                yield os.path.join(dirpath, filename)
+
+
 # -----------------------------------------------------------------------------
 # Execution Wrappers
 
@@ -593,6 +602,81 @@ class edit_generators:
                     span=match.span(),
                     content='ARRAY_SIZE(%s)' % match.group(1),
                     content_fail='__ALWAYS_FAIL__',
+                ))
+
+            return edits
+
+    class header_clean(EditGenerator):
+        """
+        Clean headers, ensuring that the headers removed are not used directly or indirectly.
+
+        Note that the `CFLAGS` should be set so missing prototypes error instead of warn:
+        With GCC: `-Werror=missing-prototypes`
+        """
+
+        @staticmethod
+        def _header_guard_from_filename(f):
+            return '__%s__' % os.path.basename(f).replace('.', '_').upper()
+
+
+        @classmethod
+        def setup(cls):
+            # For each file replace pragma once with old-style header guard.
+            # This is needed so we can remove the header with the knowledge the source file didn't use it indirectly.
+            files = []
+            shared_edit_data = {
+                'files': files,
+            }
+            for f in files_recursive_with_ext(
+                    os.path.join(SOURCE_DIR, 'source'),
+                    ('.h', '.hh', '.inl', '.hpp', '.hxx'),
+            ):
+                with open(f, 'r', encoding='utf-8') as fh:
+                    data = fh.read()
+
+                for match in re.finditer(r'^[ \t]*#\s*(pragma\s+once)\b', data, flags=re.MULTILINE):
+                    header_guard = cls._header_guard_from_filename(f)
+                    start, end = match.span()
+                    src = data[start:end]
+                    dst = (
+                        '#ifndef %s\n#define %s' % (header_guard, header_guard)
+                    )
+                    dst_footer = '\n#endif /* %s */\n' % header_guard
+                    files.append((f, src, dst, dst_footer))
+                    data = data[:start] + dst + data[end:] + dst_footer
+                    with open(f, 'w', encoding='utf-8') as fh:
+                        fh.write(data)
+                    break
+            return shared_edit_data
+
+        @staticmethod
+        def teardown(shared_edit_data):
+            files = shared_edit_data['files']
+            for f, src, dst, dst_footer in files:
+                with open(f, 'r', encoding='utf-8') as fh:
+                    data = fh.read()
+
+                data = data.replace(
+                    dst, src,
+                ).replace(
+                    dst_footer, '',
+                )
+                with open(f, 'w', encoding='utf-8') as fh:
+                    fh.write(data)
+
+        @classmethod
+        def edit_list_from_file(cls, source, data, _shared_edit_data):
+            edits = []
+
+            # Remove include.
+            for match in re.finditer(r"^(([ \t]*#\s*include\s+\")([^\"]+)(\"[^\n]*\n))", data, flags=re.MULTILINE):
+                header_name = match.group(3)
+                header_guard = cls._header_guard_from_filename(header_name)
+                edits.append(Edit(
+                    span=match.span(),
+                    content='', # Remove the header.
+                    content_fail='%s__ALWAYS_FAIL__%s' % (match.group(2), match.group(4)),
+                    extra_build_args=('-D' + header_guard),
                 ))
 
             return edits
