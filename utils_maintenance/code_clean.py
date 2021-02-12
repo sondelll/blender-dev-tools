@@ -97,10 +97,12 @@ def run(args, *, quiet):
 # Build System Access
 
 def cmake_cache_var(cmake_dir, var):
-    cache_file = open(os.path.join(cmake_dir, "CMakeCache.txt"), encoding='utf-8')
-    lines = [l_strip for l in cache_file for l_strip in (l.strip(),)
-             if l_strip if not l_strip.startswith("//") if not l_strip.startswith("#")]
-    cache_file.close()
+    with open(os.path.join(cmake_dir, "CMakeCache.txt"), encoding='utf-8') as cache_file:
+        lines = [
+            l_strip for l in cache_file
+            if (l_strip := l.strip())
+            if not l_strip.startswith(("//", "#"))
+        ]
 
     for l in lines:
         if l.split(":")[0] == var:
