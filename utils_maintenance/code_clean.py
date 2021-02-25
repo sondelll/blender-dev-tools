@@ -851,7 +851,7 @@ def run_edits_on_directory(build_dir, regex_list, edit_to_apply, skip_test=False
             return False
         # Raise an exception since this should never happen,
         # we want to know about it early if it does, as it will cause failure
-        # when attenpting to compile the missing file.
+        # when attempting to compile the missing file.
         if not os.path.exists(c):
             raise Exception("Missing source file: " + c)
 
