@@ -139,6 +139,7 @@ def process_commands(cmake_dir, data):
 
 
 def find_build_args_ninja(build_dir):
+    import time
     cmake_dir = build_dir
     make_exe = "ninja"
     process = subprocess.Popen(
@@ -157,6 +158,7 @@ def find_build_args_ninja(build_dir):
 
 
 def find_build_args_make(build_dir):
+    import time
     make_exe = "make"
     process = subprocess.Popen(
         [make_exe, "--always-make", "--dry-run", "--keep-going", "VERBOSE=1"],
@@ -171,7 +173,7 @@ def find_build_args_make(build_dir):
 
     # print("done!", len(out), "bytes")
     data = out.decode("utf-8", errors="ignore").split("\n")
-    return process_commands(cmake_dir, data)
+    return process_commands(build_dir, data)
 
 
 # -----------------------------------------------------------------------------
@@ -827,7 +829,7 @@ def run_edits_on_directory(build_dir, regex_list, edit_to_apply, skip_test=False
             "Can't find Ninja or Makefile (%r or %r), aborting" %
             (build_file_ninja, build_file_make)
         )
-        return
+        return 1
     # needed for when arguments are referenced relatively
     os.chdir(build_dir)
 
@@ -906,6 +908,7 @@ def run_edits_on_directory(build_dir, regex_list, edit_to_apply, skip_test=False
         edit_generator_class.teardown(shared_edit_data)
 
     print("\n" "Exit without errors")
+    return 0
 
 
 def create_parser():
