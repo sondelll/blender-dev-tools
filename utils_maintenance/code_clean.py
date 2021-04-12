@@ -35,7 +35,6 @@ import os
 
 from typing import (
     Any,
-    Callable,
     Dict,
     Generator,
     List,
@@ -695,7 +694,7 @@ class edit_generators:
                     fh.write(data)
 
         @classmethod
-        def edit_list_from_file(cls, source: str, data: str, _shared_edit_data: Any) -> List[Edit]:
+        def edit_list_from_file(cls, _source: str, data: str, _shared_edit_data: Any) -> List[Edit]:
             edits = []
 
             # Remove include.
@@ -947,7 +946,7 @@ def run_edits_on_directory(
             del args_expanded
         else:
             # now we have commands
-            for i, (c, build_args) in enumerate(args):
+            for c, build_args in args:
                 wash_source_with_edits(
                     (c, output_from_build_args(build_args), build_args, edit_to_apply, skip_test, shared_edit_data)
                 )
@@ -1019,7 +1018,7 @@ def main() -> int:
     build_dir = args.build_dir
     regex_list = []
 
-    for i, expr in enumerate(args.match):
+    for expr in args.match:
         try:
             regex_list.append(re.compile(expr))
         except Exception as ex:
