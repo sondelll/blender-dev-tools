@@ -83,8 +83,7 @@ def main() -> None:
         if not extra_env:
             extra_env = {}
 
-        # print(f)
-        print(repr(f[len('/src/blender/'):]) + ',')
+        print(f)
         cmd = (
             "mypy",
             "--strict",

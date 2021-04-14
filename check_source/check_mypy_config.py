@@ -8,6 +8,7 @@ from typing import (
 
 PATHS: Tuple[Tuple[str, Tuple[Any, ...], Dict[str, str]], ...] = (
     ("build_files/cmake/", (), {'MYPYPATH': "modules"}),
+    ("build_files/utils/", (), {'MYPYPATH': "modules"}),
     ("doc/manpage/blender.1.py", (), {}),
     ("source/tools/check_source/", (), {'MYPYPATH': "modules"}),
     ("source/tools/utils_maintenance/", (), {'MYPYPATH': "modules"}),
@@ -27,6 +28,9 @@ BLACKLIST = set(
         "build_files/cmake/cmake_static_check_smatch.py",
         "build_files/cmake/cmake_static_check_sparse.py",
         "build_files/cmake/cmake_static_check_splint.py",
+        "build_files/utils/make_test.py",
+        "build_files/utils/make_update.py",
+        "build_files/utils/make_utils.py",
         "source/tools/check_source/check_descriptions.py",
         "source/tools/check_source/check_header_duplicate.py",
         "source/tools/check_source/check_spelling.py",
