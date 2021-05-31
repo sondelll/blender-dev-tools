@@ -203,6 +203,7 @@ def report_personal_weekly_get(time_start, time_end):
         review.pop(diff_id, None)
 
     # Get open own diffs
+    constraints['modifiedStart'] = time_start
     result = phab.differential.revision.search(queryKey="open", constraints=constraints)
     data = result["data"]
 
@@ -238,7 +239,7 @@ def report_personal_weekly_get(time_start, time_end):
     print()
 
     # Print open diffs
-    print("\'\'\'Own solutions in review: %s\'\'\'" % sum_diffs)
+    print("\'\'\'Patches worked on: %s\'\'\'" % sum_diffs)
     for diff in sorted(data, key=lambda i: i['fields']['status']['name']):
         if diff["fields"]["status"]['closed']:
             continue
