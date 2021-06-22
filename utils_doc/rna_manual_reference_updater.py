@@ -44,6 +44,7 @@ URL is the: url_manual_prefix + url_manual_mapping[#id]
 '''
 
 import os
+import argparse
 import sphobjinv as soi
 
 def write_mappings(inv, output):
@@ -116,8 +117,6 @@ def is_valid_file(parser, arg):
         return arg
 
 def main():
-    import argparse
-
     parser = argparse.ArgumentParser(
         usage=__doc__
         )
