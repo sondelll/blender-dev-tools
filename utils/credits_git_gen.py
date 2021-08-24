@@ -156,7 +156,7 @@ def main():
         "<b>Adidas</b> - Principled BSDF shader in Cycles",
         "<b>AMD</b> - Cycles OpenCL rendering",
         "<b>Intel</b> - Cycles ray-tracing optimization",
-        "<b>NVidia</b> - Cycles Optix rendering",
+        "<b>NVidia</b> - Cycles Optix rendering, USD importer",
     )
 
     credits = Credits()
