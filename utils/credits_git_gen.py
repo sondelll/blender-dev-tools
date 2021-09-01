@@ -77,11 +77,11 @@ AuthorLookup = {
     "lazydodo": "Ray Molenkamp",
     "Ray molenkamp": "Ray Molenkamp",
     "Author Name": "Robert Guetzkow",
-    "Sybren A. StÃƒÂ¼vel": "Sybren A. Stüvel",
+    "Sybren A. StÃÂ¼vel": "Sybren A. Stüvel",
     "Simon": "Simon G",
     "Stephan": "Stephan Seitz",
     "blender": "Sergey Sharybin",
-    "Vuk GardaÅ¡eviÄ‡": "Vuk Gardašević",
+    "Vuk GardaÅ¡eviÄ": "Vuk Gardašević",
     "ianwill": "Willian Padovani Germano",
     }
 
