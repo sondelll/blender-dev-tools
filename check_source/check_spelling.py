@@ -106,7 +106,7 @@ re_ignore = re.compile(
     r"<\w+@[\w\.\-]+>|"
 
     # Convention for TODO/FIXME messages: TODO(my name) OR FIXME(name+name) OR XXX(some-name) OR NOTE(name/other-name):
-    r"\b(TODO|FIXME|XXX|NOTE)\([A-Za-z\s\+\-/]+\)|"
+    r"\b(TODO|FIXME|XXX|NOTE|WARNING)\(@?[\w\s\+\-/]+\)|"
 
     # Doxygen style: <pre> ... </pre>
     r"<pre>.+</pre>|"
