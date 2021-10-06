@@ -465,12 +465,15 @@ def spell_check_file(
 def spell_check_file_recursive(
         dirpath: str,
         check_type: str = 'COMMENTS',
-        cache_data: Optional[CacheData]=None,
+        cache_data: Optional[CacheData] = None,
 ) -> None:
     import os
     from os.path import join, splitext
 
-    def source_list(path: str, filename_check: Optional[Callable[[str], bool]]=None) -> Generator[str, None, None]:
+    def source_list(
+            path: str,
+            filename_check: Optional[Callable[[str], bool]] = None,
+    ) -> Generator[str, None, None]:
         for dirpath, dirnames, filenames in os.walk(path):
             # skip '.git'
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
