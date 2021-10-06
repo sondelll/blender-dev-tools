@@ -111,7 +111,7 @@ dict_custom = {
     "parameterization",
     "parentless",
     "passepartout",
-    "pixelated", "pixelisation",
+    "pixelate", "pixelated", "pixelisation",
     "planarity",
     "polytope",
     "postprocessed",
@@ -421,4 +421,15 @@ dict_ignore = {
     # clang-tidy (for convenience).
     "bugprone-suspicious-enum-usage",
     "bugprone-use-after-move",
+}
+
+# Allow: `un-word`, `re-word` ... etc, in this case only check `word`.
+dict_ignore_hyphenated_prefix = {
+    "de",
+    "mis",
+    "non",
+    "post",
+    "pre",
+    "re",
+    "un",
 }
