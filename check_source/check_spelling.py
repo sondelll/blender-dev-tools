@@ -74,7 +74,17 @@ from check_spelling_c_config import (
     dict_custom,
     dict_ignore,
     dict_ignore_hyphenated_prefix,
+    files_ignore,
 )
+
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
+ROOTDIR = os.path.normpath(os.path.join(BASEDIR, "..", "..", ".."))
+
+# Ensure native slashes.
+files_ignore = {
+    os.path.normpath(os.path.join(ROOTDIR, f.replace("/", os.sep)))
+    for f in files_ignore
+}
 
 # -----------------------------------------------------------------------------
 # Dictionary Utilities
@@ -476,14 +486,19 @@ def spell_check_file_recursive(
             filename_check: Optional[Callable[[str], bool]] = None,
     ) -> Generator[str, None, None]:
         for dirpath, dirnames, filenames in os.walk(path):
+            # Only needed so this can be matches with ignore paths.
+            dirpath = os.path.abspath(dirpath)
             # skip '.git'
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
                 if filename.startswith("."):
                     continue
                 filepath = join(dirpath, filename)
-                if filename_check is None or filename_check(filepath):
-                    yield filepath
+                if not (filename_check is None or filename_check(filepath)):
+                    continue
+                if filepath in files_ignore:
+                    continue
+                yield filepath
 
     def is_source(filename: str) -> bool:
         ext = splitext(filename)[1]

@@ -51,7 +51,7 @@ dict_custom = {
     "boolean",
     "breaked",
     "callables",
-    "canonicalized",
+    "canonicalization", "canonicalized", "canonicalizing",
     "catadioptric",
     "checksums",
     "collinear",
@@ -67,6 +67,7 @@ dict_custom = {
     "decrement",
     "decrementing",
     "deduplicating", "deduplication",
+    "degeneracies",
     "denoised", "denoiser", "denoising",
     "dereference", "dereferenced",
     "desaturate",
@@ -110,6 +111,9 @@ dict_custom = {
     "natively",
     "optionals",
     "orthogonalize",
+    "parallelize",
+    "parallelizing",
+    "tokenizing",
     "transmissive",
     "unpaused"
     "overridable",
@@ -346,8 +350,8 @@ dict_ignore = {
     "animatable",
     "arg", "args",
     "bool",
+    "constness",
     "dirpath",
-    "dof",
     "dupli",
     "eg",
     "filename", "filenames",
@@ -444,4 +448,8 @@ dict_ignore_hyphenated_prefix = {
     "pre",
     "re",
     "un",
+}
+
+files_ignore = {
+    "source/tools/utils_doc/rna_manual_reference_updater.py",  # Contains language ID references.
 }
