@@ -86,7 +86,8 @@ def dictionary_create():  # type: ignore
 
     # Don't add ignore to the dictionary, since they will be suggested.
     for w in dict_custom:
-        dict_spelling.add(w)
+        # Also, don't use `add(w)`, this will manipulate users personal dictionaries.
+        dict_spelling.add_to_session(w)
     return dict_spelling
 
 
