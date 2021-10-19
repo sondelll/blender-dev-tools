@@ -74,6 +74,7 @@ from check_spelling_c_config import (
     dict_custom,
     dict_ignore,
     dict_ignore_hyphenated_prefix,
+    dict_ignore_hyphenated_suffix,
     files_ignore,
 )
 
@@ -114,8 +115,13 @@ def dictionary_check(w: str) -> bool:
 
             # Allow: `un-word`, `re-word`.
             w_split = w.strip("-").split("-")
-            if w_split and w_split[0].lower() in dict_ignore_hyphenated_prefix:
-                del w_split[0]
+            if len(w_split) > 1:
+                if w_split and w_split[0].lower() in dict_ignore_hyphenated_prefix:
+                    del w_split[0]
+            # Allow: `word-ish`, `word-ness`.
+            if len(w_split) > 1:
+                if w_split and w_split[-1].lower() in dict_ignore_hyphenated_suffix:
+                    del w_split[-1]
 
             for w_sub in w_split:
                 if w_sub:

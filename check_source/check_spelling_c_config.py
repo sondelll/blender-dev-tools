@@ -450,6 +450,11 @@ dict_ignore_hyphenated_prefix = {
     "un",
 }
 
+dict_ignore_hyphenated_suffix = {
+    "ish",
+    "ness",
+}
+
 files_ignore = {
     "source/tools/utils_doc/rna_manual_reference_updater.py",  # Contains language ID references.
 }
