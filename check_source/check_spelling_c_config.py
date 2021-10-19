@@ -46,6 +46,7 @@ dict_custom = {
     "adjoint", "adjugate",
     "alignable",
     "allocator", "allocators",
+    "anisotropic",
     "anisotropy",
     "atomicity",
     "boolean",
@@ -113,6 +114,7 @@ dict_custom = {
     "orthogonalize",
     "parallelize",
     "parallelizing",
+    "precompute",
     "tokenizing",
     "transmissive",
     "unpaused"
