@@ -19,6 +19,13 @@
 # (c) 2009, At Mind B.V. - Jeroen Bakker
 # (c) 2014, Blender Foundation - Campbell Barton
 
+# -----------------------------------------------------------------------------
+# NOTICE: this module is expanded upon in Blender Asset Tracer.
+#
+# See https://developer.blender.org/source/blender-asset-tracer/
+# and https://pypi.org/project/blender-asset-tracer/
+# -----------------------------------------------------------------------------
+
 import gzip
 import logging
 import os
