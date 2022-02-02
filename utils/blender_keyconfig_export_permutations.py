@@ -67,7 +67,7 @@ def argparse_create():
         default="select_mouse:rmb_action",
         metavar='KEYMAP_PREFS', type=str,
         help=(
-            "Colon separated list of attributes to generate key-map combinations from. "
+            "Colon separated list of attributes to generate key-map configuration permutations. "
             "WARNING: as all combinations are tested, their number increases exponentially!"
         ),
         required=False,
@@ -76,19 +76,21 @@ def argparse_create():
     return parser
 
 
-def combinations_from_attrs_impl(config, partial, index):
+def permutations_from_attrs_impl(config, permutation, index):
+    index_next = index + 1
     attr, values = config[index]
-    index = index + 1
     for val in values:
-        partial.append((attr, val))
-        if index == len(config):
-            yield tuple(partial)
+        permutation[index] = (attr, val)
+        if index_next == len(config):
+            yield tuple(permutation)
         else:
-            yield from combinations_from_attrs_impl(config, partial, index)
-        partial.pop()
+            # Keep walking down the list of permutations.
+            yield from permutations_from_attrs_impl(config, permutation, index_next)
+    # Not necessary, just ensure stale values aren't used.
+    permutation[index] = None
 
 
-def combinations_from_attrs(config):
+def permutations_from_attrs(config):
     """
     Take a list of attributes and possible values:
 
@@ -103,10 +105,13 @@ def combinations_from_attrs(config):
         [("select_mouse", 'LEFT'), ("rmb_action", 'FALLBACK_TOOL')],
         ... etc ...
     """
-    return list(combinations_from_attrs_impl(config, [], 0))
+    permutation = [None] * len(config)
+    result = list(permutations_from_attrs_impl(config, permutation, 0))
+    assert permutation == ([None] * len(config))
+    return result
 
 
-def combinations_as_filename(values):
+def permutation_as_filename(values):
     """
     Takes a configuration, eg:
 
@@ -115,10 +120,14 @@ def combinations_as_filename(values):
     And returns a filename compatible path:
     """
     from urllib.parse import quote
-    return quote(".".join([
-        "-".join((str(key), str(val)))
-        for key, val in values
-    ]), safe="")
+    return quote(
+        ".".join([
+            "-".join((str(key), str(val)))
+                for key, val in values
+        ]),
+        # Needed so forward slashes aren't included in the resulting name.
+        safe="",
+    )
 
 
 def main():
@@ -152,17 +161,17 @@ def main():
         config.append((attr, value))
     config = tuple(config)
 
-    for config_state in combinations_from_attrs(config):
+    for attr_permutation in permutations_from_attrs(config):
+        print(attr_permutation)
 
         # Reload and set.
-        bpy.ops.preferences.keyconfig_activate(filepath=preset_filepath)
         km_prefs = context.window_manager.keyconfigs.active.preferences
-
-        print(config_state)
-        for attr, value in config_state:
+        for attr, value in attr_permutation:
             setattr(km_prefs, attr, value)
+        # Re-activate after setting preferences, tsk, ideally this shouldn't be necessary.
+        bpy.ops.preferences.keyconfig_activate(filepath=preset_filepath)
 
-        filepath = os.path.join(output_dir, combinations_as_filename(config_state) + ".py")
+        filepath = os.path.join(output_dir, permutation_as_filename(attr_permutation) + ".py")
 
         print("Writing:", filepath)
         bpy.ops.preferences.keyconfig_export(filepath=filepath, all=True)
