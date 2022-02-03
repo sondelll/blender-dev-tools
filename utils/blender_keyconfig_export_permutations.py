@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
 #  This program is free software; you can redistribute it and/or
@@ -19,16 +20,22 @@
 # <pep8-80 compliant>
 
 
-"""
+r"""
 This script exports permutations of key-maps with different settings modified.
 
 Useful for checking changes intended for one configuration don't impact others accidentally.
 
-./blender.bin \
-    -b --factory-startup \
+./blender.bin -b --factory-startup \
     --python source/tools/utils/blender_keyconfig_export_permutations.py -- \
+    --preset=Blender \
     --output-dir=./output \
     --keymap-prefs=select_mouse:rmb_action
+
+/blender.bin -b --factory-startup \
+    --python source/tools/utils/blender_keyconfig_export_permutations.py -- \
+    --preset=Blender_27x \
+    --output-dir=output \
+    --keymap-prefs="select_mouse"
 
 The preferences setting: ``select_mouse:rmb_action`` expands into:
 
@@ -41,15 +48,22 @@ config = [
 import os
 import sys
 
-import bpy
-from bpy import context
-
 
 def argparse_create():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Parse keymap combination arguments",
+        description=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--preset",
+        dest="preset",
+        default="Blender",
+        metavar='PRESET', type=str,
+        help="The name of the preset to export",
+        required=False,
     )
 
     parser.add_argument(
@@ -105,13 +119,15 @@ def permutations_from_attrs(config):
         [("select_mouse", 'LEFT'), ("rmb_action", 'FALLBACK_TOOL')],
         ... etc ...
     """
+    if not config:
+        return ()
     permutation = [None] * len(config)
     result = list(permutations_from_attrs_impl(config, permutation, 0))
     assert permutation == ([None] * len(config))
     return result
 
 
-def permutation_as_filename(values):
+def permutation_as_filename(preset, values):
     """
     Takes a configuration, eg:
 
@@ -120,8 +136,11 @@ def permutation_as_filename(values):
     And returns a filename compatible path:
     """
     from urllib.parse import quote
+    if not values:
+        return quote(preset)
+
     return quote(
-        ".".join([
+        preset + "_" + ".".join([
             "-".join((str(key), str(val)))
                 for key, val in values
         ]),
@@ -131,47 +150,61 @@ def permutation_as_filename(values):
 
 
 def main():
-    args = argparse_create().parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    try:
+        import bpy
+    except ImportError:
+        # Run outside of Blender, just show "--help".
+        bpy = None
+        args.insert(0, "--help")
 
+    args = argparse_create().parse_args(args)
+    if bpy is None:
+        return
+
+    from bpy import context
+
+    preset = args.preset
     output_dir = args.output_dir
 
     os.makedirs(output_dir, exist_ok=True)
 
     # Needed for background mode.
-    preset_filepath = bpy.utils.preset_find("Blender", preset_path="keyconfig")
+    preset_filepath = bpy.utils.preset_find(preset, preset_path="keyconfig")
     bpy.ops.preferences.keyconfig_activate(filepath=preset_filepath)
 
     # Key-map preferences..
     km_prefs = context.window_manager.keyconfigs.active.preferences
     config = []
     # Use RNA introspection:
-    for attr in args.keymap_prefs.split(":"):
-        if not hasattr(km_prefs, attr):
-            print(f"KeyMap preferences does not have attribute: {attr:s}")
-            sys.exit(1)
+    if args.keymap_prefs:
+        for attr in args.keymap_prefs.split(":"):
+            if not hasattr(km_prefs, attr):
+                print(f"KeyMap preferences does not have attribute: {attr:s}")
+                sys.exit(1)
 
-        prop_def = km_prefs.rna_type.properties.get(attr)
-        match prop_def.type:
-            case 'ENUM':
-                value = tuple(val.identifier for val in prop_def.enum_items)
-            case 'BOOLEAN':
-                value = (True, False)
-            case _ as prop_def_type:
-                raise Exception(f"Unhandled attribute type {prop_def_type:s}")
-        config.append((attr, value))
+            prop_def = km_prefs.rna_type.properties.get(attr)
+            match prop_def.type:
+                case 'ENUM':
+                    value = tuple(val.identifier for val in prop_def.enum_items)
+                case 'BOOLEAN':
+                    value = (True, False)
+                case _ as prop_def_type:
+                    raise Exception(f"Unhandled attribute type {prop_def_type:s}")
+            config.append((attr, value))
     config = tuple(config)
 
-    for attr_permutation in permutations_from_attrs(config):
-        print(attr_permutation)
+    for attr_permutation in (permutations_from_attrs(config) or ((),)):
 
         # Reload and set.
-        km_prefs = context.window_manager.keyconfigs.active.preferences
-        for attr, value in attr_permutation:
-            setattr(km_prefs, attr, value)
+        if attr_permutation is not None:
+            km_prefs = context.window_manager.keyconfigs.active.preferences
+            for attr, value in attr_permutation:
+                setattr(km_prefs, attr, value)
         # Re-activate after setting preferences, tsk, ideally this shouldn't be necessary.
         bpy.ops.preferences.keyconfig_activate(filepath=preset_filepath)
 
-        filepath = os.path.join(output_dir, permutation_as_filename(attr_permutation) + ".py")
+        filepath = os.path.join(output_dir, permutation_as_filename(preset, attr_permutation) + ".py")
 
         print("Writing:", filepath)
         bpy.ops.preferences.keyconfig_export(filepath=filepath, all=True)
