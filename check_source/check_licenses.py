@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 Check license headers follow the SPDX spec
 https://spdx.org/licenses/
@@ -363,10 +364,9 @@ def main() -> None:
             source_dirs_exclude=(
                 "./extern",
                 "./intern/cycles",
-                "./release/scripts/addons",
+                # "./release/scripts/addons",
                 "./release/scripts/addons_contrib",
                 "./source/tools",
-                # "extern",
                 # Needs manual handling as it mixes two licenses.
                 "./intern/atomic",
             ),
@@ -376,7 +376,8 @@ def main() -> None:
             source_dirs_include=(".",),
             source_dirs_exclude=(
                 # This is an exception, it has it's own CMake files we do not maintain.
-                "./extern/audaspace/",
+                "./extern/audaspace",
+                "./extern/quadriflow/3rd/lemon-1.3.1",
             ),
         ),
         Pass(
@@ -386,11 +387,10 @@ def main() -> None:
                 # This is an exception, it has it's own CMake files we do not maintain.
                 "./extern",
                 "./intern/cycles",
-                "./release/scripts/addons",
                 "./release/scripts/addons_contrib",
-                "./source/tools",
                 # Just data.
                 "./doc/python_api/examples",
+                "./release/scripts/addons/presets"
                 "./release/scripts/presets",
                 "./release/scripts/templates_py",
             ),
