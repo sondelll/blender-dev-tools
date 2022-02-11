@@ -390,7 +390,7 @@ def main() -> None:
                 "./release/scripts/addons_contrib",
                 # Just data.
                 "./doc/python_api/examples",
-                "./release/scripts/addons/presets"
+                "./release/scripts/addons/presets",
                 "./release/scripts/presets",
                 "./release/scripts/templates_py",
             ),
