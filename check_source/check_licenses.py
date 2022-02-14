@@ -58,6 +58,13 @@ with open(SPDX_IDENTIFIER_FILE, "r", encoding="utf-8") as fh:
     ACCEPTABLE_LICENSES = set(l.split()[0] for l in sorted(fh) if "https://spdx.org/licenses/" in l)
 del fh
 
+
+# -----------------------------------------------------------------------------
+# Global Variables
+
+# Count how many licenses are used.
+SPDX_IDENTIFIER_STATS: Dict[str, int] = {}
+
 # -----------------------------------------------------------------------------
 # File Type Checks
 
@@ -188,7 +195,14 @@ def check_contents(filepath: str, text: str) -> None:
         # Allow completely empty files (sometimes `__init__.py`).
         if not text.rstrip():
             return
-        print("Missing:", filepath)
+        print("Missing 'SPDX-License-Identifier:'", filepath)
+
+        # Maintain statistics.
+        try:
+            SPDX_IDENTIFIER_STATS["*Unknown License*"] += 1
+        except KeyError:
+            SPDX_IDENTIFIER_STATS["*Unknown License*"] = 1
+
         return
     identifier_end = identifier_beg + len(identifier)
     line_end = txt_next_eol(text, identifier_end, len(text), step_over=False)
@@ -208,6 +222,11 @@ def check_contents(filepath: str, text: str) -> None:
                 "not in",
                 SPDX_IDENTIFIER_FILE,
             )
+
+        try:
+            SPDX_IDENTIFIER_STATS[license_id] += 1
+        except KeyError:
+            SPDX_IDENTIFIER_STATS[license_id] = 1
 
     # Check for blank lines:
     blank_lines = text[:identifier_beg].count("\n")
@@ -255,6 +274,25 @@ def check_contents(filepath: str, text: str) -> None:
             raise Exception("Unknown file type: {:s}".format(filepath))
 
         mapping.setdefault(txt_anonymous_years(comment_block), []).append(filepath)
+
+
+def report_statistics() -> None:
+    """
+    Report some final statistics of license usage.
+    """
+    print("")
+    files_total = sum(SPDX_IDENTIFIER_STATS.values())
+    title = "License Statistics in {:d} Files".format(files_total)
+    print("#" * len(title))
+    print(title)
+    print("#" * len(title))
+    print("")
+    max_length = max(len(k) for k in SPDX_IDENTIFIER_STATS.keys())
+    print("  License:" + (" " * (max_length - 7)) + "Files:")
+    print("")
+    for k, v in sorted(SPDX_IDENTIFIER_STATS.items()):
+        print("-", k + " " * (max_length - len(k)), v)
+    print("")
 
 
 # -----------------------------------------------------------------------------
@@ -405,6 +443,8 @@ def main() -> None:
             for filepath in v:
                 print("-", filepath)
             print("")
+
+    report_statistics()
 
 
 if __name__ == "__main__":
