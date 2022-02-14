@@ -54,7 +54,7 @@ del fh
 # File Type Checks
 
 
-# Use '/* .. */' style comments.
+# Use `/* .. */` style comments.
 def filename_is_c_compat(filename: str) -> bool:
     return filename.endswith(
         (
@@ -88,44 +88,6 @@ def filename_is_script_compat(filename: str) -> bool:
 
 # -----------------------------------------------------------------------------
 # Cursor Motion
-
-
-def next_line(text: str, index: int) -> int:
-    index = text.find("\n", index + 1)
-    if index == -1 or index + 1 == len(text):
-        return -1
-    return index + 1
-
-
-def next_line_non_empty(text: str, index: int) -> int:
-    while index < len(text):
-        index_prev = index
-        index = text.find("\n", index)
-        if index == -1:
-            index = index_prev
-            break
-        if text[index_prev:index].strip():
-            index = index_prev
-            break
-        # Step over the newline.
-        index = index + 1
-    return index
-
-
-def txt_prev_line_while_fn(text: str, index: int, fn: Callable[[str], bool]) -> int:
-    """
-    Return the next line where ``fn`` fails.
-    """
-    while index > 0:
-        index_prev = index
-        index = text.rfind("\n", index)
-        if index == -1:
-            index = 0
-        if not fn(text[index_prev:index]):
-            index = index_prev
-            break
-    return index
-
 
 def txt_next_line_while_fn(text: str, index: int, fn: Callable[[str], bool]) -> int:
     """
@@ -173,20 +135,6 @@ def txt_prev_bol(text: str, pos: int, limit: int) -> int:
         return limit
     # We don't want to include the newline.
     return pos_next + 1
-
-
-def txt_expand_to_line_bounds(
-    text: str,
-    *,
-    span: Tuple[int, int],
-    span_limit: Optional[Tuple[int, int]],
-) -> Tuple[int, int]:
-    return (
-        txt_prev_bol(text, span[0], span_limit[0] if span_limit else 0),
-        txt_next_eol(
-            text, span[1], span_limit[1] if span_limit else len(text), step_over=True
-        ),
-    )
 
 
 def txt_anonymous_years(text: str) -> str:
