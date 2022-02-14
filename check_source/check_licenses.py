@@ -53,6 +53,7 @@ SOURCE_DIR = os.path.normpath(
 SPDX_IDENTIFIER_FILE = os.path.join(
     SOURCE_DIR, "doc", "license", "SPDX-license-identifiers.txt"
 )
+SPDX_IDENTIFIER_UNKNOWN = "*Unknown License*"
 
 with open(SPDX_IDENTIFIER_FILE, "r", encoding="utf-8") as fh:
     ACCEPTABLE_LICENSES = set(l.split()[0] for l in sorted(fh) if "https://spdx.org/licenses/" in l)
@@ -63,7 +64,7 @@ del fh
 # Global Variables
 
 # Count how many licenses are used.
-SPDX_IDENTIFIER_STATS: Dict[str, int] = {}
+SPDX_IDENTIFIER_STATS: Dict[str, int] = {SPDX_IDENTIFIER_UNKNOWN: 0}
 
 # -----------------------------------------------------------------------------
 # File Type Checks
@@ -198,10 +199,7 @@ def check_contents(filepath: str, text: str) -> None:
         print("Missing 'SPDX-License-Identifier:'", filepath)
 
         # Maintain statistics.
-        try:
-            SPDX_IDENTIFIER_STATS["*Unknown License*"] += 1
-        except KeyError:
-            SPDX_IDENTIFIER_STATS["*Unknown License*"] = 1
+        SPDX_IDENTIFIER_STATS[SPDX_IDENTIFIER_UNKNOWN] += 1
 
         return
     identifier_end = identifier_beg + len(identifier)
@@ -282,7 +280,9 @@ def report_statistics() -> None:
     """
     print("")
     files_total = sum(SPDX_IDENTIFIER_STATS.values())
-    title = "License Statistics in {:d} Files".format(files_total)
+    files_unknown = SPDX_IDENTIFIER_STATS[SPDX_IDENTIFIER_UNKNOWN]
+    files_percent = (1.0 - (files_unknown / files_total)) * 100.0
+    title = "License Statistics in {:d} Files, {:.2f}% Complete".format(files_total, files_percent)
     print("#" * len(title))
     print(title)
     print("#" * len(title))
@@ -291,6 +291,8 @@ def report_statistics() -> None:
     print("  License:" + (" " * (max_length - 7)) + "Files:")
     print("")
     for k, v in sorted(SPDX_IDENTIFIER_STATS.items()):
+        if not v:
+            continue
         print("-", k + " " * (max_length - len(k)), v)
     print("")
 
