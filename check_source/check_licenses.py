@@ -363,8 +363,6 @@ def main() -> None:
             source_dirs_include=(".",),
             source_dirs_exclude=(
                 "./extern",
-                "./intern/cycles",
-                # "./release/scripts/addons",
                 "./release/scripts/addons_contrib",
                 "./source/tools",
                 # Needs manual handling as it mixes two licenses.
@@ -386,7 +384,6 @@ def main() -> None:
             source_dirs_exclude=(
                 # This is an exception, it has it's own CMake files we do not maintain.
                 "./extern",
-                "./intern/cycles",
                 "./release/scripts/addons_contrib",
                 # Just data.
                 "./doc/python_api/examples",
