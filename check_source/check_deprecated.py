@@ -165,7 +165,6 @@ def main() -> None:
         else:
             info = "[" + term_colors.OKBLUE + "OK" + term_colors.ENDC + "] " + info
 
-        date_str = ""
         print("{:s}: days-old({:d}), {:s}:{:d} {:s}".format(
             data.strftime("%Y/%m/%d"),
             days_old,
