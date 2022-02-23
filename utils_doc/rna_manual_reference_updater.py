@@ -31,6 +31,7 @@ import os
 import argparse
 import sphobjinv as soi
 
+
 def write_mappings(inv, output):
     print("Writing...")
     # Write the file
@@ -68,7 +69,8 @@ def write_mappings(inv, output):
     # fw("\"nl_NL\":        \"nl\",\n")  # Dutch
     # fw("\"pl_PL\":        \"pl\",\n")  # Polish
     fw("\"pt_PT\":        \"pt\",\n")  # Portuguese
-    fw("\"pt_BR\":        \"pt\",\n")  # Portuguese - Brazil, for until we have a pt_BR version
+    # Portuguese - Brazil, for until we have a pt_BR version
+    fw("\"pt_BR\":        \"pt\",\n")
     fw("\"ru_RU\":        \"ru\",\n")  # Russian
     fw("\"sk_SK\":        \"sk\",\n")  # Slovak
     # fw("\"sl\":           \"sl\",\n")  # Slovenian
@@ -85,7 +87,8 @@ def write_mappings(inv, output):
     fw("url_manual_mapping = (\n")
 
     # Logic to manipulate strings from objects.inv
-    lines = [o.data_line() for o in inv.objects if o.name.startswith("bpy.types") or o.name.startswith("bpy.ops")]
+    lines = [o.data_line() for o in inv.objects if o.name.startswith(
+        "bpy.types") or o.name.startswith("bpy.ops")]
     # Finding first space will return length of rna path
     lines.sort(key=lambda l: l.find(" "), reverse=True)
     for line in lines:
@@ -96,15 +99,16 @@ def write_mappings(inv, output):
 
 
 def is_valid_file(parser, arg):
-    if not os.path.isfile(arg) :
+    if not os.path.isfile(arg):
         parser.error("The file %s does not exist!" % arg)
     else:
         return arg
 
+
 def main():
     parser = argparse.ArgumentParser(
         usage=__doc__
-        )
+    )
 
     parser.add_argument(
         "--input",
@@ -143,6 +147,7 @@ def main():
 
     write_mappings(inv, args.output)
     print("Done!")
+
 
 if __name__ == "__main__":
     main()
