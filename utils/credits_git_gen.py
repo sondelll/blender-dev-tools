@@ -203,7 +203,7 @@ def main():
         "<b>Adidas</b> - Principled BSDF shader in Cycles",
         "<b>AMD</b> - Cycles HIP GPU rendering, CPU optimizations",
         "<b>Intel</b> - Cycles ray-tracing optimization",
-        "<b>NVidia</b> - Cycles OptiX GPU rendering, USD importer",
+        "<b>NVIDIA</b> - Cycles OptiX GPU rendering, USD importer",
         "<b>Facebook</b> - Cycles subsurface scattering improvements",
         "<b>Apple</b> - Cycles Metal GPU backend",
     )
