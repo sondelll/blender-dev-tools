@@ -159,7 +159,7 @@ class BlendFile:
 
     def find_block_from_offset(self, offset):
         # same as looking looping over all blocks,
-        # then checking ``block.addr_old == offset``
+        # then checking `block.addr_old == offset`.
         assert(type(offset) is int)
         return self.block_from_offset.get(offset)
 

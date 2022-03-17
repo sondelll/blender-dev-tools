@@ -34,6 +34,7 @@ SOURCE_EXT = (
     ".m", ".mm",
 )
 
+
 def sort_cmake_file_lists(fn: str, data_src: str) -> Optional[str]:
     fn_dir = os.path.dirname(fn)
     lines = data_src.splitlines(keepends=True)
