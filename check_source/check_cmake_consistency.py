@@ -218,7 +218,7 @@ def cmake_get_src(f: str) -> None:
 
 
             for l, line_number in tokens:
-                # replace dirs
+                # Replace directories.
                 l = l.replace("${CMAKE_SOURCE_DIR}", SOURCE_DIR)
                 l = l.replace("${CMAKE_CURRENT_SOURCE_DIR}", cmake_base)
                 l = l.replace("${CMAKE_CURRENT_BINARY_DIR}", cmake_base_bin)

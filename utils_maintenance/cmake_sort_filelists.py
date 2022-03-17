@@ -57,7 +57,7 @@ def sort_cmake_file_lists(fn: str, data_src: str) -> Optional[str]:
         a = a.split("#", 1)[0]
         b = b.split("#", 1)[0]
 
-        # Compare leading whitespace.
+        # Compare leading white-space.
         if a[:-(len(a.lstrip()))] == b[:-(len(b.lstrip()))]:
             # return False
 

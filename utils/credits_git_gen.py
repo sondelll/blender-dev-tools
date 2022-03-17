@@ -9,7 +9,7 @@ Example use:
    credits_git_gen.py --source=/src/blender --range=SHA1..HEAD
 """
 
-from git_log import GitCommit, GitCommitIter
+from git_log import GitCommitIter
 import unicodedata as ud
 
 # -----------------------------------------------------------------------------
