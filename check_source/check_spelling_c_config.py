@@ -197,6 +197,7 @@ dict_custom = {
     "remappable",
     "remapper",
     "remappings",
+    "remesher",
     "rendeder",
     "renderable",
     "renormalize",
@@ -231,7 +232,9 @@ dict_custom = {
     "unassign",
     "unbuffered",
     "unclamped",
+    "uncollapsed",
     "uncomment",
+    "uncommented",
     "unconfigured",
     "undisplaced",
     "uneditable",
@@ -257,6 +260,7 @@ dict_custom = {
     "untag",
     "untagging",
     "untrusted",
+    "unusably",
     "unvisited",
     "userless",
     "vectorial",
@@ -272,11 +276,12 @@ dict_custom = {
     "writeable",
     "zoomable",
 
-    # python types
+    # C/C++/Python types (we could quote every instance but it's impractical).
     "enum",
     "enums",
     "int",
     "ints",
+    "nullptr",  # C++ NULL-pointer.
     "str",
     "tuple",
     "tuples",
@@ -304,12 +309,15 @@ dict_custom = {
     "unparent",
 
     # Accepted abbreviations.
-    "config",
+    "anim",  # animation.
+    "config",  # configuration.
     "coord",
     "coords",
-    "dir",
-    "iter",
+    # "dir",  # direction/directory.
+    "iter",  # iteration.
     "multi",
+    "numpad",  # numeric-pad.
+    "numpads",  # numeric-pads.
     "ortho",
     "recalc",
     "resync",
@@ -317,8 +325,7 @@ dict_custom = {
     "structs",
     "subdir",
 
-    # general computer terms
-    "XXX",
+    # General computer terms.
     "app",
     "ascii",
     "autocomplete",
@@ -557,6 +564,7 @@ dict_ignore_hyphenated_prefix = {
 }
 
 dict_ignore_hyphenated_suffix = {
+    "ify",
     "ish",
     "ness",
 }
