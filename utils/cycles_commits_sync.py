@@ -107,7 +107,9 @@ def commit_map_get(repository, path, start_commit):
                b"--work-tree=" + repository,
                b"log", b"--format=%H %at %s", b"--reverse",
                start_commit + b'..HEAD',
-               os.path.join(repository, path))
+               b'--',
+               os.path.join(repository, path),
+               b':(exclude)' + os.path.join(repository, b'intern/cycles/blender'))
     lines = subprocess.check_output(command).split(b"\n")
     commit_map = collections.OrderedDict()
     for line in lines:
@@ -153,9 +155,11 @@ def transfer_commits(commit_hashes,
             b"--git-dir=" + os.path.join(from_repository, b'.git'),
             b"--work-tree=" + from_repository,
             b"format-patch", b"-1",
-            b"--start-number", str(patch_index),
+            b"--start-number", bytes(str(patch_index), 'utf-8'),
             b"-o", to_repository,
             commit_hash,
+            b'--',
+            b':(exclude)' + os.path.join(from_repository, b'intern/cycles/blender'),
         )
         patch_file = subprocess.check_output(command).rstrip(b"\n")
         if dst_is_cycles:
