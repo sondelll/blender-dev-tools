@@ -67,6 +67,10 @@ def main():
                 # Info: Put imports on separate lines.
                 # Why disable?: Disruptive, we manage our own imports.
                 "E401",
+                # Info: Fix module level import not at top of file.
+                # Why disable?: re-ordering imports is disruptive and breaks some scripts
+                # that need to check if a module has already been loaded in the case of reloading.
+                "E402",
                 # Info: Fix various deprecated code (via lib2to3)
                 # Why disable?: causes imports to be added/re-arranged.
                 "W690",
