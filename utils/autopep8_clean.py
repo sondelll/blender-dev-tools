@@ -72,8 +72,7 @@ def autopep8_format_file(f):
         )),
         "--aggressive",
         "--in-place",
-        # Prefer to manually handle line wrapping
-        "--max-line-length", "200",
+        "--max-line-length", "120",
         f,
     ))
 
