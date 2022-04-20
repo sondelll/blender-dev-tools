@@ -18,8 +18,8 @@ IGNORE_HASHES = {
 }
 
 # Start revisions from both repositories.
-CYCLES_START_COMMIT = b"b941eccba81bbb1309a0eb4977fc3a77796f4ada" # blender-v2.92
-BLENDER_START_COMMIT = b"02948a2cab44f74ed101fc1b2ad9fe4431123e85" # v2.92
+CYCLES_START_COMMIT = b"b941eccba81bbb1309a0eb4977fc3a77796f4ada"  # blender-v2.92
+BLENDER_START_COMMIT = b"02948a2cab44f74ed101fc1b2ad9fe4431123e85"  # v2.92
 
 # Prefix which is common for all the subjects.
 GIT_SUBJECT_COMMON_PREFIX = b"Subject: [PATCH] "
