@@ -59,9 +59,6 @@ def autopep8_format_file(f):
             # Info: Fix bare except.
             # Why disable?: Disruptive, leave our exceptions alone.
             "E722",
-            # Info: Put imports on separate lines.
-            # Why disable?: Disruptive, we manage our own imports.
-            "E401",
             # Info: Fix module level import not at top of file.
             # Why disable?: re-ordering imports is disruptive and breaks some scripts
             # that need to check if a module has already been loaded in the case of reloading.
