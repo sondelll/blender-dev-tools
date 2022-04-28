@@ -136,6 +136,10 @@ def main():
         if f not in ignore_files
     ]
 
+    # Happens when users run "make format" passing in individual C/C++ files.
+    if not files:
+        return
+
     autopep8_format(files)
 
 
