@@ -32,6 +32,13 @@ def compute_paths(paths, use_default_paths):
             "source",
             "tests",
         )
+    else:
+        # Filter out files, this is only done so this utility wont print that it's
+        # "Operating" on files that will be filtered out later on.
+        paths = [
+            f for f in paths
+            if os.path.isfile(f) and f.endswith(extensions)
+        ]
 
     if os.sep != "/":
         paths = [f.replace("/", os.sep) for f in paths]
