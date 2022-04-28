@@ -52,15 +52,15 @@ def source_files_from_git(paths, changed_only):
     return [f.decode('ascii') for f in files]
 
 
-def autopep8_ensure_version():
+def autopep8_ensure_version(autopep8_format_cmd_argument):
     global AUTOPEP8_FORMAT_CMD
     autopep8_format_cmd = None
     version_output = None
     # Attempt to use `AUTOPEP8_BIN` passed in from "make format"
     # so the autopep8 distributed with Blender will be used.
-    for is_environ in (True, False):
-        if is_environ:
-            autopep8_format_cmd = os.environ.get("AUTOPEP8_BIN", "")
+    for is_default in (True, False):
+        if is_default:
+            autopep8_format_cmd = autopep8_format_cmd_argument
             if autopep8_format_cmd and os.path.exists(autopep8_format_cmd):
                 pass
             else:
@@ -120,6 +120,13 @@ def argparse_create():
         required=False,
     )
     parser.add_argument(
+        "--autopep8-command",
+        dest="autopep8_command",
+        default="autopep8",
+        help="The command to call autopep8.",
+        required=False,
+    )
+    parser.add_argument(
         "paths",
         nargs=argparse.REMAINDER,
         help="All trailing arguments are treated as paths."
@@ -129,7 +136,9 @@ def argparse_create():
 
 
 def main():
-    version = autopep8_ensure_version()
+    args = argparse_create().parse_args()
+
+    version = autopep8_ensure_version(args.autopep8_command)
     if version is None:
         print("Unable to detect 'autopep8 --version'")
         sys.exit(1)
@@ -146,8 +155,6 @@ def main():
             "or use the precompiled libs repository." %
             (VERSION_MAX_RECOMMENDED[0], VERSION_MAX_RECOMMENDED[1]),
         )
-
-    args = argparse_create().parse_args()
 
     use_default_paths = not (bool(args.paths) or bool(args.changed_only))
 
