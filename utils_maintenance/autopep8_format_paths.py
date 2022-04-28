@@ -33,8 +33,6 @@ def compute_paths(paths, use_default_paths):
             "tests",
         )
     else:
-        # Filter out files, this is only done so this utility wont print that it's
-        # "Operating" on files that will be filtered out later on.
         paths = [
             f for f in paths
             if os.path.isfile(f) and f.endswith(extensions)
@@ -58,9 +56,17 @@ def autopep8_ensure_version():
     global AUTOPEP8_FORMAT_CMD
     autopep8_format_cmd = None
     version_output = None
-    # TODO: search paths.
-    for _ in (None,):
-        autopep8_format_cmd = "autopep8"
+    # Attempt to use `AUTOPEP8_BIN` passed in from "make format"
+    # so the autopep8 distributed with Blender will be used.
+    for is_environ in (True, False):
+        if is_environ:
+            autopep8_format_cmd = os.environ.get("AUTOPEP8_BIN", "")
+            if autopep8_format_cmd and os.path.exists(autopep8_format_cmd):
+                pass
+            else:
+                continue
+        else:
+            autopep8_format_cmd = "autopep8"
         try:
             version_output = subprocess.check_output((autopep8_format_cmd, "--version")).decode('utf-8')
         except FileNotFoundError as e:
@@ -77,7 +83,12 @@ def autopep8_ensure_version():
 
 
 def autopep8_format(files):
-    cmd = [AUTOPEP8_FORMAT_CMD, "--recursive", "--in-place", "--jobs=0"] + files
+    cmd = [*AUTOPEP8_FORMAT_CMD, "--recursive", "--in-place", "--jobs=0"] + files
+
+    # Support executing from the module directory because Blender does not distribute the command.
+    if cmd[0].endswith(".py"):
+        cmd = [sys.executable, *cmd]
+
     return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
 
@@ -86,7 +97,10 @@ def argparse_create():
 
     # When --help or no args are given, print this help
     usage_text = "Format source code"
-    epilog = "This script runs autopep8 on multiple files/directories"
+    epilog = (
+        "This script runs autopep8 on multiple files/directories.\n"
+        "Set AUTOPEP8_BIN environment variable to define the command used to run autopep8."
+    )
     parser = argparse.ArgumentParser(description=usage_text, epilog=epilog)
     parser.add_argument(
         "--changed-only",
