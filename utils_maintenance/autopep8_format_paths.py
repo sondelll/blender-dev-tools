@@ -67,8 +67,13 @@ def autopep8_ensure_version():
                 continue
         else:
             autopep8_format_cmd = "autopep8"
+
+        cmd = [autopep8_format_cmd]
+        if cmd[0].endswith(".py"):
+            cmd = [sys.executable, *cmd]
+
         try:
-            version_output = subprocess.check_output((autopep8_format_cmd, "--version")).decode('utf-8')
+            version_output = subprocess.check_output((*cmd, "--version")).decode('utf-8')
         except FileNotFoundError as e:
             continue
         AUTOPEP8_FORMAT_CMD = autopep8_format_cmd
@@ -83,7 +88,7 @@ def autopep8_ensure_version():
 
 
 def autopep8_format(files):
-    cmd = [*AUTOPEP8_FORMAT_CMD, "--recursive", "--in-place", "--jobs=0"] + files
+    cmd = [AUTOPEP8_FORMAT_CMD, "--recursive", "--in-place", "--jobs=0"] + files
 
     # Support executing from the module directory because Blender does not distribute the command.
     if cmd[0].endswith(".py"):
