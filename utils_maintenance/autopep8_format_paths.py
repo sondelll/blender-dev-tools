@@ -27,6 +27,7 @@ def compute_paths(paths, use_default_paths):
     if use_default_paths:
         paths = (
             "build_files",
+            "intern",
             "release",
             "doc",
             "source",
