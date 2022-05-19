@@ -82,8 +82,9 @@ def autopep8_ensure_version(autopep8_format_cmd_argument):
     version = next(iter(v for v in version_output.split() if v[0].isdigit()), None)
     if version is not None:
         version = version.split("-")[0]
+        version_split = version.split(".")
         version = tuple(int(n) for n in version.split("."))
-    if version is not None:
+        version = (version + (0, 0, 0))[:3]  # Ensure exactly 3 numbers.
         print("Using %s (%d.%d.%d)..." % (AUTOPEP8_FORMAT_CMD, version[0], version[1], version[2]))
     return version
 
