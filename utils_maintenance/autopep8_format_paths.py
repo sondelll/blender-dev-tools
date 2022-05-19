@@ -68,6 +68,7 @@ def autopep8_ensure_version(autopep8_format_cmd_argument):
     global AUTOPEP8_FORMAT_CMD
     autopep8_format_cmd = None
     version_output = None
+    version = None
     # Attempt to use `--autopep8-command` passed in from `make format`
     # so the autopep8 distributed with Blender will be used.
     for is_default in (True, False):
@@ -90,7 +91,8 @@ def autopep8_ensure_version(autopep8_format_cmd_argument):
             continue
         AUTOPEP8_FORMAT_CMD = autopep8_format_cmd
         break
-    version = next(iter(v for v in version_output.split() if v[0].isdigit()), None)
+    if version_output is not None:
+        version = next(iter(v for v in version_output.split() if v[0].isdigit()), None)
     if version is not None:
         version = version.split("-")[0]
         version = tuple(int(n) for n in version.split("."))
