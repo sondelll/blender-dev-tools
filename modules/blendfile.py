@@ -152,7 +152,7 @@ class BlendFile:
         self.close()
 
     def find_blocks_from_code(self, code):
-        assert(type(code) == bytes)
+        assert type(code) == bytes
         if code not in self.code_index:
             return []
         return self.code_index[code]
@@ -160,7 +160,7 @@ class BlendFile:
     def find_block_from_offset(self, offset):
         # same as looking looping over all blocks,
         # then checking `block.addr_old == offset`.
-        assert(type(offset) is int)
+        assert type(offset) is int
         return self.block_from_offset.get(offset)
 
     def close(self):
@@ -361,13 +361,13 @@ class BlendFileBlock:
         return self.dna_type.dna_type_id.decode('ascii')
 
     def refine_type_from_index(self, sdna_index_next):
-        assert(type(sdna_index_next) is int)
+        assert type(sdna_index_next) is int
         sdna_index_curr = self.sdna_index
         self.file.ensure_subtype_smaller(sdna_index_curr, sdna_index_next)
         self.sdna_index = sdna_index_next
 
     def refine_type(self, dna_type_id):
-        assert(type(dna_type_id) is bytes)
+        assert type(dna_type_id) is bytes
         self.refine_type_from_index(self.file.sdna_index_from_id[dna_type_id])
 
     def get_file_offset(
@@ -379,11 +379,11 @@ class BlendFileBlock:
         """
         Return (offset, length)
         """
-        assert(type(path) is bytes)
+        assert type(path) is bytes
 
         ofs = self.file_offset
         if base_index != 0:
-            assert(base_index < self.count)
+            assert base_index < self.count
             ofs += (self.size // self.count) * base_index
         self.file.handle.seek(ofs, os.SEEK_SET)
 
@@ -407,7 +407,7 @@ class BlendFileBlock:
 
         ofs = self.file_offset
         if base_index != 0:
-            assert(base_index < self.count)
+            assert base_index < self.count
             ofs += (self.size // self.count) * base_index
         self.file.handle.seek(ofs, os.SEEK_SET)
 
@@ -441,7 +441,7 @@ class BlendFileBlock:
 
         ofs = self.file_offset
         if base_index != 0:
-            assert(base_index < array_size)
+            assert base_index < array_size
             ofs += dna_size * base_index
         self.file.handle.seek(ofs, os.SEEK_SET)
 
@@ -542,8 +542,8 @@ class BlendFileBlock:
         if type(result) is not int:
             return result
 
-        assert(self.file.structs[sdna_index_refine].field_from_path(
-            self.file.header, self.file.handle, path).dna_name.is_pointer)
+        assert self.file.structs[sdna_index_refine].field_from_path(
+            self.file.header, self.file.handle, path).dna_name.is_pointer
         if result != 0:
             # possible (but unlikely)
             # that this fails and returns None
@@ -623,7 +623,7 @@ class BlendFileHeader:
         elif pointer_size_id == b'_':
             self.pointer_size = 4
         else:
-            assert(0)
+            assert 0
         endian_id = values[2]
         if endian_id == b'v':
             self.is_little_endian = True
@@ -634,7 +634,7 @@ class BlendFileHeader:
             self.endian_index = 1
             self.endian_str = b'>'
         else:
-            assert(0)
+            assert 0
 
         version_id = values[3]
         self.version = int(version_id)
@@ -763,7 +763,7 @@ class DNAStruct:
             if len(path) >= 2 and type(path[1]) is not bytes:
                 name_tail = path[2:]
                 index = path[1]
-                assert(type(index) is int)
+                assert type(index) is int
             else:
                 name_tail = path[1:]
                 index = 0
@@ -772,7 +772,7 @@ class DNAStruct:
             name_tail = None
             index = 0
 
-        assert(type(name) is bytes)
+        assert type(name) is bytes
 
         field = self.field_from_name.get(name)
 
@@ -783,7 +783,7 @@ class DNAStruct:
                     index_offset = header.pointer_size * index
                 else:
                     index_offset = field.dna_type.size * index
-                assert(index_offset < field.dna_size)
+                assert index_offset < field.dna_size
                 handle.seek(index_offset, os.SEEK_CUR)
             if not name_tail:  # None or ()
                 return field
@@ -814,10 +814,10 @@ class DNAStruct:
                                     dna_name.array_size)
         except NotImplementedError as e:
             raise NotImplementedError("%r exists, but can't resolve field %r" %
-                    (path, dna_name.name_only), dna_name, dna_type)
+                                      (path, dna_name.name_only), dna_name, dna_type)
 
     def field_set(self, header, handle, path, value):
-        assert(type(path) == bytes)
+        assert type(path) == bytes
 
         field = self.field_from_path(header, handle, path)
         if field is None:
@@ -899,7 +899,7 @@ class DNA_IO:
 
     @staticmethod
     def write_string(handle, astring, fieldlen):
-        assert(isinstance(astring, str))
+        assert isinstance(astring, str)
         if len(astring) >= fieldlen:
             stringw = astring[0:fieldlen]
         else:
@@ -908,7 +908,7 @@ class DNA_IO:
 
     @staticmethod
     def write_bytes(handle, astring, fieldlen):
-        assert(isinstance(astring, (bytes, bytearray)))
+        assert isinstance(astring, (bytes, bytearray))
         if len(astring) >= fieldlen:
             stringw = astring[0:fieldlen]
         else:

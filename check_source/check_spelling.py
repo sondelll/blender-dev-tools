@@ -660,7 +660,7 @@ def main() -> None:
         clear_stale_cache = False
 
     if cache_filepath:
-        assert(cache_data is not None)
+        assert cache_data is not None
         if VERBOSE_CACHE:
             print("Writing cache:", len(cache_data))
 
