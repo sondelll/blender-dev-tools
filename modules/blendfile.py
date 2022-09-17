@@ -496,7 +496,7 @@ class BlendFileBlock:
         file load & save (i.e. it does not changes due to pointer addresses variations).
         """
         # TODO This implementation is most likely far from optimal... and CRC32 is not renown as the best hashing
-        #      algo either. But for now does the job!
+        #      algorithm either. But for now does the job!
         import zlib
 
         def _is_pointer(self, k):
@@ -878,7 +878,7 @@ class DNA_IO:
             return cls.read_float(handle, header)
         elif dna_type_id == b'char':
             if dna_size == 1 and array_size <= 1:
-                # Single char, assume it's bitflag or int value, and not a string/bytes data...
+                # Single char, assume it's bit-flag or int value, and not a string/bytes data.
                 return cls.read_char(handle, header)
             if use_str:
                 if use_str_nil:
