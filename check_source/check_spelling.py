@@ -36,6 +36,10 @@ SuggestMap = Dict[str, str]
 ONLY_ONCE = True
 USE_COLOR = True
 
+# Ignore: `/*identifier*/` as these are used in C++ for unused arguments or to denote struct members.
+# These identifiers can be ignored in most cases.
+USE_SKIP_SINGLE_IDENTIFIER_COMMENTS = True
+
 _words_visited = set()
 _files_visited = set()
 
@@ -192,6 +196,9 @@ re_words = re.compile(
 )
 
 re_not_newline = re.compile("[^\n]")
+
+if USE_SKIP_SINGLE_IDENTIFIER_COMMENTS:
+    re_single_word_c_comments = re.compile(r"\/\*[\s]*[a-zA-Z_]+[a-zA-Z0-9_]*[\s]*\*\/")
 
 
 def words_from_text(text: str, check_type: str) -> List[Tuple[str, int]]:
@@ -353,17 +360,28 @@ def extract_c_comments(filepath: str) -> Tuple[List[Comment], Set[str]]:
 
     comment_ranges = []
 
+    if USE_SKIP_SINGLE_IDENTIFIER_COMMENTS:
+        comment_ignore_offsets = set()
+        for match in re_single_word_c_comments.finditer(text):
+            comment_ignore_offsets.add(match.start(0))
+
     i = 0
     while i != -1:
         i = text.find(BEGIN, i)
         if i != -1:
             i_next = text.find(END, i)
             if i_next != -1:
+                do_comment_add = True
+                if USE_SKIP_SINGLE_IDENTIFIER_COMMENTS:
+                    if i in comment_ignore_offsets:
+                        do_comment_add = False
+
                 # Not essential but seek back to find beginning of line.
                 while i > 0 and text[i - 1] in {"\t", " "}:
                     i -= 1
                 i_next += len(END)
-                comment_ranges.append((i, i_next))
+                if do_comment_add:
+                    comment_ranges.append((i, i_next))
             i = i_next
         else:
             pass
@@ -715,7 +733,7 @@ def main() -> None:
             else:
                 # single file
                 for report in spell_check_file_with_cache_support(
-                        filepath, extract_type=extract_type, cache_data=cache_data):
+                        filepath, check_type, extract_type=extract_type, cache_data=cache_data):
                     spell_check_report(filepath, check_type, report)
     except KeyboardInterrupt:
         clear_stale_cache = False
