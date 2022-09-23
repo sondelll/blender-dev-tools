@@ -75,6 +75,38 @@ def files_recursive_with_ext(path: str, ext: Tuple[str, ...]) -> Generator[str, 
                 yield os.path.join(dirpath, filename)
 
 
+def text_matching_bracket(
+        data: str,
+        pos_beg: int,
+        pos_limit: int,
+        beg_bracket: str,
+        end_bracket: str,
+) -> int:
+    """
+    Return the matching bracket or -1.
+
+    .. note:: This is not sophisticated, brackets in strings will confuse the function.
+    """
+    level = 1
+
+    # The next bracket.
+    pos = pos_beg + 1
+
+    # Clamp the limit.
+    limit = min(pos_beg + pos_limit, len(data))
+
+    while pos < limit:
+        c = data[pos]
+        if c == beg_bracket:
+            level += 1
+        elif c == end_bracket:
+            level -= 1
+            if level == 0:
+                return pos
+        pos += 1
+    return -1
+
+
 # -----------------------------------------------------------------------------
 # Execution Wrappers
 
@@ -648,6 +680,46 @@ class edit_generators:
                     span=match.span(),
                     content='ARRAY_SIZE(%s)' % match.group(1),
                     content_fail='__ALWAYS_FAIL__',
+                ))
+
+            return edits
+
+    class parenthesis_cleanup(EditGenerator):
+        """
+        Use macro for an error checked array size:
+
+        Replace:
+          ((a + b))
+        With:
+          (a + b)
+        """
+        @staticmethod
+        def edit_list_from_file(_source: str, data: str, _shared_edit_data: Any) -> List[Edit]:
+            edits = []
+            # Note that this replacement is only valid in some cases,
+            # so only apply with validation that binary output matches.
+            for match in re.finditer(r"(\(\()", data):
+                inner_beg = match.span()[0] + 1
+                inner_end = text_matching_bracket(data, inner_beg, inner_beg + 4000, "(", ")")
+                if inner_end == -1:
+                    continue
+                outer_beg = inner_beg - 1
+                outer_end = text_matching_bracket(data, outer_beg, inner_end + 1, "(", ")")
+                if outer_end != inner_end + 1:
+                    continue
+
+                text = data[inner_beg:inner_end + 1]
+                # prefix = (("",) + data[max(outer_beg - 6, 0):outer_beg].split())[-1]
+                # if prefix in {"if", "while"} and " = " in text:
+                # Ignore assignment in `if` statements.
+                # continue
+                if " = " in text:
+                    continue
+
+                edits.append(Edit(
+                    span=(outer_beg, outer_end + 1),
+                    content=text,
+                    content_fail='(__ALWAYS_FAIL__)',
                 ))
 
             return edits
