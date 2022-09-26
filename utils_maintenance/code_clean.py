@@ -1153,65 +1153,92 @@ def wash_source_with_edits(arg_group: Tuple[str, str, str, str, bool, Any]) -> N
     with open(source, 'r', encoding='utf-8') as fh:
         data = fh.read()
     edit_generator_class = edit_class_from_id(edit_to_apply)
-    edits = edit_generator_class.edit_list_from_file(source, data, shared_edit_data)
-    # Sort by span, in a way that tries shorter spans first
-    # This is more efficient when testing multiple overlapping edits,
-    # since when a smaller edit succeeds, it's less likely to have to try as many edits that span wider ranges.
-    # (This applies to `use_function_style_cast`).
-    edits.sort(reverse=True, key=lambda edit: (edit.span[0], -edit.span[1]))
-    if not edits:
-        return
 
-    if skip_test:
-        # Just apply all edits.
-        for (start, end), text, _text_always_fail, _extra_build_args in edits:
-            data = apply_edit(data, text, start, end, verbose=VERBOSE)
-        with open(source, 'w', encoding='utf-8') as fh:
-            fh.write(data)
-        return
+    # After performing all edits, store the result in this set.
+    #
+    # This is a heavy solution that guarantees edits never oscillate between
+    # multiple states, so re-visiting a previously visited state will always exit.
+    data_states = set()
 
-    test_edit(
-        source, output, None, build_args, data, data,
-        keep_edits=False,
-    )
-    if not os.path.exists(output):
-        raise Exception("Failed to produce output file: " + output)
+    # When overlapping edits are found, keep attempting edits.
+    edit_again = True
+    while edit_again:
+        edit_again = False
 
-    output_bytes = file_as_bytes(output)
-    # Dummy value that won't cause problems.
-    edit_prev_start = len(data) + 1
+        edits = edit_generator_class.edit_list_from_file(source, data, shared_edit_data)
+        # Sort by span, in a way that tries shorter spans first
+        # This is more efficient when testing multiple overlapping edits,
+        # since when a smaller edit succeeds, it's less likely to have to try as many edits that span wider ranges.
+        # (This applies to `use_function_style_cast`).
+        edits.sort(reverse=True, key=lambda edit: (edit.span[0], -edit.span[1]))
+        if not edits:
+            return
 
-    for (start, end), text, text_always_fail, extra_build_args in edits:
-        if end >= edit_prev_start:
-            continue
-        build_args_for_edit = build_args
-        if extra_build_args:
-            # Add directly after the compile command.
-            a, b = build_args.split(' ', 1)
-            build_args_for_edit = a + ' ' + extra_build_args + ' ' + b
-
-        data_test = apply_edit(data, text, start, end, verbose=VERBOSE)
-        if test_edit(
-                source, output, output_bytes, build_args_for_edit, data, data_test,
-                keep_edits=False,
-        ):
-            # This worked, check if the change would fail if replaced with 'text_always_fail'.
-            data_test_always_fail = apply_edit(data, text_always_fail, start, end, verbose=False)
-            if test_edit(
-                    source, output, output_bytes, build_args_for_edit, data, data_test_always_fail,
-                    expect_failure=True, keep_edits=False,
-            ):
-                if VERBOSE_EDIT_ACTION:
-                    print("Edit at", (start, end), "doesn't fail, assumed to be ifdef'd out, continuing")
-                continue
-
-            # Apply the edit.
-            data = data_test
+        if skip_test:
+            # Just apply all edits.
+            for (start, end), text, _text_always_fail, _extra_build_args in edits:
+                data = apply_edit(data, text, start, end, verbose=VERBOSE)
             with open(source, 'w', encoding='utf-8') as fh:
                 fh.write(data)
+            return
 
-            # Update the last successful edit, the end of the next edit must not overlap this one.
-            edit_prev_start = start
+        test_edit(
+            source, output, None, build_args, data, data,
+            keep_edits=False,
+        )
+        if not os.path.exists(output):
+            raise Exception("Failed to produce output file: " + output)
+
+        output_bytes = file_as_bytes(output)
+        # Dummy value that won't cause problems.
+        edit_prev_start = len(data) + 1
+
+        for (start, end), text, text_always_fail, extra_build_args in edits:
+            if end >= edit_prev_start:
+                # Run the edits again, in case this would have succeeded,
+                # but was skipped due to edit-overlap.
+                edit_again = True
+                continue
+            build_args_for_edit = build_args
+            if extra_build_args:
+                # Add directly after the compile command.
+                a, b = build_args.split(' ', 1)
+                build_args_for_edit = a + ' ' + extra_build_args + ' ' + b
+
+            data_test = apply_edit(data, text, start, end, verbose=VERBOSE)
+            if test_edit(
+                    source, output, output_bytes, build_args_for_edit, data, data_test,
+                    keep_edits=False,
+            ):
+                # This worked, check if the change would fail if replaced with 'text_always_fail'.
+                data_test_always_fail = apply_edit(data, text_always_fail, start, end, verbose=False)
+                if test_edit(
+                        source, output, output_bytes, build_args_for_edit, data, data_test_always_fail,
+                        expect_failure=True, keep_edits=False,
+                ):
+                    if VERBOSE_EDIT_ACTION:
+                        print("Edit at", (start, end), "doesn't fail, assumed to be ifdef'd out, continuing")
+                    continue
+
+                # Apply the edit.
+                data = data_test
+                with open(source, 'w', encoding='utf-8') as fh:
+                    fh.write(data)
+
+                # Update the last successful edit, the end of the next edit must not overlap this one.
+                edit_prev_start = start
+
+        # Finished applying `edits`, check if further edits should be applied.
+        if edit_again:
+            data_states_len = len(data_states)
+            data_states.add(data)
+            if data_states_len == len(data_states):
+                # Avoid the *extremely* unlikely case that edits re-visit previously visited states.
+                edit_again = False
+            else:
+                # It is interesting to know how many passes run when debugging.
+                # print("Passes for: ", source, len(data_states))
+                pass
 
 
 # -----------------------------------------------------------------------------
