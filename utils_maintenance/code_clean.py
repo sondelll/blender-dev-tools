@@ -887,7 +887,11 @@ def wash_source_with_edits(arg_group: Tuple[str, str, str, str, bool, Any]) -> N
         data = fh.read()
     edit_generator_class = edit_class_from_id(edit_to_apply)
     edits = edit_generator_class.edit_list_from_file(source, data, shared_edit_data)
-    edits.sort(reverse=True)
+    # Sort by span, in a way that tries shorter spans first
+    # This is more efficient when testing multiple overlapping edits,
+    # since when a smaller edit succeeds, it's less likely to have to try as many edits that span wider ranges.
+    # (This applies to `use_function_style_cast`).
+    edits.sort(reverse=True, key=lambda edit: (edit.span[0], -edit.span[1]))
     if not edits:
         return
 
@@ -907,8 +911,12 @@ def wash_source_with_edits(arg_group: Tuple[str, str, str, str, bool, Any]) -> N
         raise Exception("Failed to produce output file: " + output)
 
     output_bytes = file_as_bytes(output)
+    # Dummy value that won't cause problems.
+    edit_prev_start = len(data) + 1
 
     for (start, end), text, text_always_fail, extra_build_args in edits:
+        if end >= edit_prev_start:
+            continue
         build_args_for_edit = build_args
         if extra_build_args:
             # Add directly after the compile command.
@@ -934,6 +942,9 @@ def wash_source_with_edits(arg_group: Tuple[str, str, str, str, bool, Any]) -> N
             data = data_test
             with open(source, 'w', encoding='utf-8') as fh:
                 fh.write(data)
+
+            # Update the last successful edit, the end of the next edit must not overlap this one.
+            edit_prev_start = start
 
 
 # -----------------------------------------------------------------------------
