@@ -14,6 +14,7 @@ import re
 import subprocess
 import sys
 import os
+import string
 
 from typing import (
     Any,
@@ -50,6 +51,12 @@ SOURCE_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", ".."))
 
 
 # -----------------------------------------------------------------------------
+# Generic Constants
+
+IDENTIFIER_CHARS = set(string.ascii_letters + "_" + string.digits)
+
+
+# -----------------------------------------------------------------------------
 # General Utilities
 
 # Note that we could use a hash, however there is no advantage, compare it's contents.
@@ -75,7 +82,7 @@ def files_recursive_with_ext(path: str, ext: Tuple[str, ...]) -> Generator[str, 
                 yield os.path.join(dirpath, filename)
 
 
-def text_matching_bracket(
+def text_matching_bracket_forward(
         data: str,
         pos_beg: int,
         pos_limit: int,
@@ -104,6 +111,38 @@ def text_matching_bracket(
             if level == 0:
                 return pos
         pos += 1
+    return -1
+
+
+def text_matching_bracket_backward(
+        data: str,
+        pos_end: int,
+        pos_limit: int,
+        beg_bracket: str,
+        end_bracket: str,
+) -> int:
+    """
+    Return the matching bracket or -1.
+
+    .. note:: This is not sophisticated, brackets in strings will confuse the function.
+    """
+    level = 1
+
+    # The next bracket.
+    pos = pos_end - 1
+
+    # Clamp the limit.
+    limit = max(0, pos_limit)
+
+    while pos >= limit:
+        c = data[pos]
+        if c == end_bracket:
+            level += 1
+        elif c == beg_bracket:
+            level -= 1
+            if level == 0:
+                return pos
+        pos -= 1
     return -1
 
 
@@ -692,34 +731,101 @@ class edit_generators:
           ((a + b))
         With:
           (a + b)
+
+        Replace:
+          (func(a + b))
+        With:
+          func(a + b)
+
+        Note that the `CFLAGS` should be set so missing parentheses that contain assignments - error instead of warn:
+        With GCC: `-Werror=parentheses`
         """
         @staticmethod
         def edit_list_from_file(_source: str, data: str, _shared_edit_data: Any) -> List[Edit]:
             edits = []
-            # Note that this replacement is only valid in some cases,
-            # so only apply with validation that binary output matches.
-            for match in re.finditer(r"(\(\()", data):
-                inner_beg = match.span()[0] + 1
-                inner_end = text_matching_bracket(data, inner_beg, inner_beg + 4000, "(", ")")
+
+            # Give up after searching for a bracket this many characters and finding none.
+            bracket_seek_limit = 4000
+
+            # Don't match double brackets because this will not match multiple overlapping matches
+            # Where 3 brackets should be checked as two separate pairs.
+            for match in re.finditer(r"(\()", data):
+                outer_beg = match.span()[0]
+                inner_beg = outer_beg + 1
+                if data[inner_beg] != "(":
+                    continue
+
+                inner_end = text_matching_bracket_forward(data, inner_beg, inner_beg + bracket_seek_limit, "(", ")")
                 if inner_end == -1:
                     continue
                 outer_beg = inner_beg - 1
-                outer_end = text_matching_bracket(data, outer_beg, inner_end + 1, "(", ")")
+                outer_end = text_matching_bracket_forward(data, outer_beg, inner_end + 1, "(", ")")
                 if outer_end != inner_end + 1:
                     continue
 
                 text = data[inner_beg:inner_end + 1]
-                # prefix = (("",) + data[max(outer_beg - 6, 0):outer_beg].split())[-1]
-                # if prefix in {"if", "while"} and " = " in text:
-                # Ignore assignment in `if` statements.
-                # continue
-                if " = " in text:
-                    continue
-
                 edits.append(Edit(
                     span=(outer_beg, outer_end + 1),
                     content=text,
                     content_fail='(__ALWAYS_FAIL__)',
+                ))
+
+            # Handle `(func(a + b))` -> `func(a + b)`
+            for match in re.finditer(r"(\))", data):
+                inner_end = match.span()[0]
+                outer_end = inner_end + 1
+                if data[outer_end] != ")":
+                    continue
+
+                inner_beg = text_matching_bracket_backward(data, inner_end, inner_end - bracket_seek_limit, "(", ")")
+                if inner_beg == -1:
+                    continue
+                outer_beg = text_matching_bracket_backward(data, outer_end, outer_end - bracket_seek_limit, "(", ")")
+                if outer_beg == -1:
+                    continue
+
+                # The text between the first two opening brackets:
+                # `(function_name(a + b))` -> `function_name`.
+                text = data[outer_beg + 1:inner_beg]
+
+                # Handled in the first loop looking for forward brackets.
+                if text == "":
+                    continue
+
+                # Don't convert `prefix(func(a + b))` -> `prefixfunc(a + b)`
+                if data[outer_beg - 1] in IDENTIFIER_CHARS:
+                    continue
+
+                # Don't convert `static_cast<float>(foo(bar))` -> `static_cast<float>foo(bar)`
+                # While this will always fail to compile it slows down tests.
+                if data[outer_beg - 1] == ">":
+                    continue
+
+                # Exact rule here is arbitrary, in general though spaces mean there are operations
+                # that can use the brackets.
+                if " " in text:
+                    continue
+
+                # Search back an arbitrary number of chars 8 should be enough
+                # but manual formatting can add additional white-space, so increase
+                # the size to account for that.
+                prefix = data[max(outer_beg - 20, 0):outer_beg].strip()
+                if prefix:
+                    # Avoid `if (SOME_MACRO(..)) {..}` -> `if SOME_MACRO(..) {..}`
+                    # While correct it relies on parenthesis within the macro which isn't ideal.
+                    if prefix.split()[-1] in {"if", "while", "switch"}:
+                        continue
+                    # Avoid `*(--foo)` -> `*--foo`.
+                    # While correct it reads badly.
+                    if data[outer_beg - 1] == "*":
+                        continue
+
+                text_no_parens = data[outer_beg + 1: outer_end]
+
+                edits.append(Edit(
+                    span=(outer_beg, outer_end + 1),
+                    content=text_no_parens,
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
