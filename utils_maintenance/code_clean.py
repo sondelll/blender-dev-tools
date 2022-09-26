@@ -53,6 +53,37 @@ SOURCE_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", ".."))
 # -----------------------------------------------------------------------------
 # Generic Constants
 
+# Sorted numeric types.
+# Intentionally missing are "unsigned".
+BUILT_IN_NUMERIC_TYPES = (
+    "bool",
+    "char",
+    "char32_t",
+    "double",
+    "float",
+    "int",
+    "int16_t",
+    "int32_t",
+    "int64_t",
+    "int8_t",
+    "intptr_t",
+    "long",
+    "off_t",
+    "ptrdiff_t",
+    "short",
+    "size_t",
+    "ssize_t",
+    "uchar",
+    "uint",
+    "uint16_t",
+    "uint32_t",
+    "uint64_t",
+    "uint8_t",
+    "uintptr_t",
+    "ulong",
+    "ushort",
+)
+
 IDENTIFIER_CHARS = set(string.ascii_letters + "_" + string.digits)
 
 
@@ -932,6 +963,86 @@ class edit_generators:
                     content='',  # Remove the header.
                     content_fail='%s__ALWAYS_FAIL__%s' % (match.group(2), match.group(4)),
                     extra_build_args=('-D' + header_guard),
+                ))
+
+            return edits
+
+    class use_function_style_cast(EditGenerator):
+        """
+        Use function call style casts (C++ only).
+
+        Replace:
+          (float)(a + b)
+        With:
+          float(a + b)
+
+        Also support more complex cases involving right hand bracket insertion.
+
+        Replace:
+          (float)foo(a + b)
+        With:
+          float(foo(a + b))
+        """
+        @staticmethod
+        def edit_list_from_file(_source: str, data: str, _shared_edit_data: Any) -> List[Edit]:
+
+            any_number_re = "(" + "|".join(BUILT_IN_NUMERIC_TYPES) + ")"
+
+            edits = []
+
+            # Handle both:
+            # - Simple case:  `(float)(a + b)` -> `float(a + b)`.
+            # - Complex Case: `(float)foo(a + b) + c` -> `float(foo(a + b)) + c`
+            for match in re.finditer(
+                    "(\\()" +  # 1st group.
+                    any_number_re +  # 2nd group.
+                    "(\\))",  # 3rd group.
+                    data):
+                beg, end = match.span()
+                char_after = data[end]
+                if char_after == "(":
+                    # Simple case.
+                    # print(data[beg:end + 1], repr(data[end]))
+                    edits.append(Edit(
+                        span=(beg, end),
+                        content=match.group(2),
+                        content_fail='__ALWAYS_FAIL__',
+                    ))
+                else:
+                    # The complex case is involved as brackets need to be added.
+                    # Currently this is not handled in a clever way, just try add in brackets
+                    # and rely on matching build output to know if they were added in the right place.
+                    text = match.group(2)
+                    span = (beg, end)
+                    for offset_end in range(end + 1, len(data)):
+                        # Not technically correct, but it's rare that this will span lines.
+                        if "\n" == data[offset_end]:
+                            break
+
+                        if (
+                                (data[offset_end - 1] in IDENTIFIER_CHARS) and
+                                (data[offset_end] in IDENTIFIER_CHARS)
+                        ):
+                            continue
+
+                        # Include `text_tail` in fail content in case it contains comments.
+                        text_tail = "(" + data[end:offset_end] + ")"
+                        edits.append(Edit(
+                            span=(beg, offset_end),
+                            content=text + text_tail,
+                            content_fail='(__ALWAYS_FAIL__)' + text_tail,
+                        ))
+
+            # Simple case: `static_cast<float>(a + b)` => `float(a + b)`.
+            for match in re.finditer(
+                    r"\b(static_cast<)" +  # 1st group.
+                    any_number_re +  # 2nd group.
+                    "(>)",  # 3rd group.
+                    data):
+                edits.append(Edit(
+                    span=match.span(),
+                    content='%s' % match.group(2),
+                    content_fail='__ALWAYS_FAIL__',
                 ))
 
             return edits
