@@ -628,8 +628,6 @@ class edit_generators:
                             re_str = r'\(' + r'\s+\&\&\s+'.join([test_not_equal] * n) + r'\)'
 
                         for match in re.finditer(re_str, data):
-                            if _source == '/src/blender/source/blender/editors/mesh/editmesh_extrude_spin.c':
-                                print(match.groups())
                             var = match.group(1)
                             var_rest = []
                             groups = match.groups()
@@ -997,12 +995,12 @@ class edit_generators:
                     "(\\()" +  # 1st group.
                     any_number_re +  # 2nd group.
                     "(\\))",  # 3rd group.
-                    data):
+                    data,
+            ):
                 beg, end = match.span()
                 char_after = data[end]
                 if char_after == "(":
                     # Simple case.
-                    # print(data[beg:end + 1], repr(data[end]))
                     edits.append(Edit(
                         span=(beg, end),
                         content=match.group(2),
@@ -1038,7 +1036,8 @@ class edit_generators:
                     r"\b(static_cast<)" +  # 1st group.
                     any_number_re +  # 2nd group.
                     "(>)",  # 3rd group.
-                    data):
+                    data,
+            ):
                 edits.append(Edit(
                     span=match.span(),
                     content='%s' % match.group(2),
