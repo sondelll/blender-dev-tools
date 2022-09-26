@@ -444,6 +444,38 @@ class edit_generators:
 
             return edits
 
+    class use_brief_types(EditGenerator):
+        """
+        Use zero before the float suffix.
+
+        Replace:
+          unsigned int
+        With:
+          uint
+        """
+        @staticmethod
+        def edit_list_from_file(_source: str, data: str, _shared_edit_data: Any) -> List[Edit]:
+            edits = []
+
+            # `unsigned char` -> `uchar`.
+            for match in re.finditer(r"(unsigned)\s+([a-z]+)", data):
+                edits.append(Edit(
+                    span=match.span(),
+                    content='u%s' % match.group(2),
+                    content_fail='__ALWAYS_FAIL__',
+                ))
+
+            # There may be some remaining uses of `unsigned` without any integer type afterwards.
+            # `unsigned` -> `uint`.
+            for match in re.finditer(r"\bunsigned\b", data):
+                edits.append(Edit(
+                    span=match.span(),
+                    content='uint',
+                    content_fail='__ALWAYS_FAIL__',
+                ))
+
+            return edits
+
     class use_elem_macro(EditGenerator):
         """
         Use the `ELEM` macro for more abbreviated expressions.
