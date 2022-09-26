@@ -209,6 +209,19 @@ def cmake_cache_var(cmake_dir: str, var: str) -> Optional[str]:
     return None
 
 
+def cmake_cache_var_is_true(cmake_var: Optional[str]) -> bool:
+    if cmake_var is None:
+        return False
+
+    cmake_var = cmake_var.upper()
+    if cmake_var in {"ON", "YES", "TRUE", "Y"}:
+        return True
+    if cmake_var.isdigit() and cmake_var != "0":
+        return True
+
+    return False
+
+
 RE_CFILE_SEARCH = re.compile(r"\s\-c\s([\S]+)")
 
 
@@ -216,11 +229,17 @@ def process_commands(cmake_dir: str, data: Sequence[str]) -> Optional[ProcessedC
     compiler_c = cmake_cache_var(cmake_dir, "CMAKE_C_COMPILER")
     compiler_cxx = cmake_cache_var(cmake_dir, "CMAKE_CXX_COMPILER")
     if compiler_c is None:
-        sys.stderr.write("Can't find C compiler in %r" % cmake_dir)
+        sys.stderr.write("Can't find C compiler in %r\n" % cmake_dir)
         return None
     if compiler_cxx is None:
-        sys.stderr.write("Can't find C++ compiler in %r" % cmake_dir)
+        sys.stderr.write("Can't find C++ compiler in %r\n" % cmake_dir)
         return None
+
+    # Check for unsupported configurations.
+    for arg in ("WITH_UNITY_BUILD", "WITH_COMPILER_CCACHE"):
+        if cmake_cache_var_is_true(cmake_cache_var(cmake_dir, arg)):
+            sys.stderr.write("The option '%s' must be disabled for proper functionality\n" % arg)
+            return None
 
     file_args = []
 
