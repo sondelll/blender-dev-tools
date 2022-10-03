@@ -1187,7 +1187,12 @@ def wash_source_with_edits(arg_group: Tuple[str, str, str, str, bool, Any]) -> N
             keep_edits=False,
         )
         if not os.path.exists(output):
-            raise Exception("Failed to produce output file: " + output)
+            # raise Exception("Failed to produce output file: " + output)
+
+            # NOTE(@campbellbarton): This fails very occasionally and needs to be investigated why.
+            # For now skip, as it's disruptive to force-quit in the middle of all other changes.
+            print("Failed to produce output file, skipping:", output)
+            return
 
         output_bytes = file_as_bytes(output)
         # Dummy value that won't cause problems.
