@@ -811,7 +811,8 @@ class DNAStruct:
                                     dna_name.is_pointer,
                                     dna_type.dna_type_id,
                                     dna_size,
-                                    dna_name.array_size)
+                                    dna_name.array_size,
+                                    use_str=use_str)
         except NotImplementedError as e:
             raise NotImplementedError("%r exists, but can't resolve field %r" %
                                       (path, dna_name.name_only), dna_name, dna_type)
